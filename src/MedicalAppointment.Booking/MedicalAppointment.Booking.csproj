@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\MedicalAppointment.Shared\MedicalAppointment.Shared.csproj" />
+    <ProjectReference Include="..\MedicalAppointment.Auth\MedicalAppointment.Auth.csproj" />
+    <ProjectReference Include="..\MedicalAppointment.Doctor\MedicalAppointment.Doctor.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

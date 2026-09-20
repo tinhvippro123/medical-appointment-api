@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MedicalAppointment.API/MedicalAppointment.API.csproj" />
+    <Project Path="src/MedicalAppointment.Auth/MedicalAppointment.Auth.csproj" />
+    <Project Path="src/MedicalAppointment.Booking/MedicalAppointment.Booking.csproj" />
+    <Project Path="src/MedicalAppointment.Department/MedicalAppointment.Department.csproj" />
+    <Project Path="src/MedicalAppointment.Doctor/MedicalAppointment.Doctor.csproj" />
+    <Project Path="src/MedicalAppointment.Shared/MedicalAppointment.Shared.csproj" />
+  </Folder>
+</Solution>

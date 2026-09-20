@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MedicalAppointment.Shared\MedicalAppointment.Shared.csproj" />
+    <ProjectReference Include="..\MedicalAppointment.Auth\MedicalAppointment.Auth.csproj" />
+    <ProjectReference Include="..\MedicalAppointment.Department\MedicalAppointment.Department.csproj" />
+    <ProjectReference Include="..\MedicalAppointment.Doctor\MedicalAppointment.Doctor.csproj" />
+    <ProjectReference Include="..\MedicalAppointment.Booking\MedicalAppointment.Booking.csproj" />
+  </ItemGroup>
+
+</Project>

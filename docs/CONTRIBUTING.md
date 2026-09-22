@@ -1,58 +1,58 @@
-﻿# Huong Dan Commit va Pull Request
+# Hướng Dẫn Commit và Pull Request
 
-## 1. Quy trinh lam viec hang ngay
+## 1. Quy trình làm việc hàng ngày
 
 ```
-Buoc 1: Pull code moi nhat
+Bước 1: Pull code mới nhất
   git checkout develop
   git pull origin develop
 
-Buoc 2: Tao branch moi tu develop
-  git checkout -b feature/ten-chuc-nang
+Bước 2: Tạo branch mới từ develop
+  git checkout -b feature/tên-chức-năng
 
-Buoc 3: Code xong, commit
+Bước 3: Code xong, commit
   git add .
-  git commit -m "feat: mo ta ngan gon"
+  git commit -m "feat: mô tả ngắn gọn"
 
-Buoc 4: Push len GitHub
-  git push origin feature/ten-chuc-nang
+Bước 4: Push lên GitHub
+  git push origin feature/tên-chức-năng
 
-Buoc 5: Vao GitHub tao Pull Request
-  Base: develop  <--  Compare: feature/ten-chuc-nang
+Bước 5: Vào GitHub tạo Pull Request
+  Base: develop  <--  Compare: feature/tên-chức-năng
 
-Buoc 6: Doi team review, approve roi MERGE
+Bước 6: Đợi team review, approve rồi MERGE
 ```
 
 ---
 
-## 2. Dat ten Branch
+## 2. Đặt tên Branch
 
 ```
-feature/auth-login          <- Chuc nang moi
-feature/department-crud     <- Chuc nang moi
-fix/login-token-expired     <- Sua loi
-refactor/doctor-service     <- Tai cau truc code
+feature/auth-login          ← Chức năng mới
+feature/department-crud     ← Chức năng mới
+fix/login-token-expired     ← Sửa lỗi
+refactor/doctor-service     ← Tái cấu trúc code
 ```
 
-### Vi du cu the cho tung nguoi
+### Ví dụ cụ thể cho từng người
 
 ```
-Tinh:   feature/auth-register
+Tính:   feature/auth-register
         feature/auth-login
         feature/auth-jwt
         feature/user-management
         feature/role-permission
 
-Triet:  feature/department-crud
+Triết:  feature/department-crud
         feature/department-image-upload
         feature/doctor-crud-admin
 
-Thinh:  feature/home-screen
+Thịnh:  feature/home-screen
         feature/doctor-list
         feature/doctor-detail
         feature/doctor-search
 
-Thuan:  feature/cart-add-remove
+Thuận:  feature/cart-add-remove
         feature/cart-update
         feature/checkout
         feature/order-history
@@ -61,115 +61,115 @@ Thuan:  feature/cart-add-remove
 
 ---
 
-## 3. Viet Commit Message
+## 3. Viết Commit Message
 
 ### Format
 
 ```
-<loai>: <mo ta ngan gon bang tieng Viet hoac tieng Anh>
+<loại>: <mô tả ngắn gọn bằng tiếng Việt hoặc tiếng Anh>
 ```
 
-### Cac loai commit
+### Các loại commit
 
-| Loai | Khi nao dung | Vi du |
+| Loại | Khi nào dùng | Ví dụ |
 |------|-------------|-------|
-| feat | Them chuc nang moi | feat: them API dang ky nguoi dung |
-| fix | Sua loi | fix: sua loi token het han khi login |
-| refactor | Sua code nhung khong doi chuc nang | refactor: toi uu DoctorService |
-| docs | Cap nhat tai lieu | docs: cap nhat README |
-| style | Format code, sua loi chinh ta | style: format code AuthController |
-| chore | Cong viec setup, config | chore: them package Dio vao pubspec |
-| test | Them/sua test | test: them unit test cho AuthService |
+| feat | Thêm chức năng mới | feat: thêm API đăng ký người dùng |
+| fix | Sửa lỗi | fix: sửa lỗi token hết hạn khi login |
+| refactor | Sửa code nhưng không đổi chức năng | refactor: tối ưu DoctorService |
+| docs | Cập nhật tài liệu | docs: cập nhật README |
+| style | Format code, sửa lỗi chính tả | style: format code AuthController |
+| chore | Công việc setup, config | chore: thêm package Dio vào pubspec |
+| test | Thêm/sửa test | test: thêm unit test cho AuthService |
 
-### Vi du commit tot
-
-```
-feat: them API POST /api/auth/register
-feat: them man hinh dang nhap
-fix: sua loi crash khi danh sach bac si rong
-refactor: tach BookingService thanh cac method nho
-docs: them API endpoints vao README
-chore: cau hinh JWT trong appsettings.json
-```
-
-### Vi du commit XAU (khong nen)
+### Ví dụ commit tốt
 
 ```
-update code              <- Qua chung chung
-fix bug                  <- Bug gi? O dau?
-asdkjahsd               <- Vo nghia
-them nhieu thu           <- Them cai gi?
+feat: thêm API POST /api/auth/register
+feat: thêm màn hình đăng nhập
+fix: sửa lỗi crash khi danh sách bác sĩ rỗng
+refactor: tách BookingService thành các method nhỏ
+docs: thêm API endpoints vào README
+chore: cấu hình JWT trong appsettings.json
+```
+
+### Ví dụ commit XẤU (không nên)
+
+```
+update code              ← Quá chung chung
+fix bug                  ← Bug gì? Ở đâu?
+asdkjahsd               ← Vô nghĩa
+thêm nhiều thứ           ← Thêm cái gì?
 ```
 
 ---
 
-## 4. Tao Pull Request tren GitHub
+## 4. Tạo Pull Request trên GitHub
 
-### Buoc 1: Vao GitHub repo, click "Pull Requests" -> "New Pull Request"
+### Bước 1: Vào GitHub repo, click "Pull Requests" → "New Pull Request"
 
-### Buoc 2: Chon branch
+### Bước 2: Chọn branch
 
 ```
 base: develop  <----  compare: feature/auth-login
 ```
 
-### Buoc 3: Dien thong tin PR
+### Bước 3: Điền thông tin PR
 
-**Tieu de PR:**
+**Tiêu đề PR:**
 ```
-[Tinh] feat: Them chuc nang dang nhap va dang ky
+[Tính] feat: Thêm chức năng đăng nhập và đăng ký
 ```
 
-**Noi dung PR (copy mau nay):**
+**Nội dung PR (copy mẫu này):**
 ```
-## Mo ta
-- Them API POST /api/auth/register (dang ky)
-- Them API POST /api/auth/login (dang nhap, tra JWT token)
-- Them man hinh Login va Register tren Flutter
+## Mô tả
+- Thêm API POST /api/auth/register (đăng ký)
+- Thêm API POST /api/auth/login (đăng nhập, trả JWT token)
+- Thêm màn hình Login và Register trên Flutter
 
 ## Checklist
-- [ ] Code chay duoc, khong bi loi
-- [ ] Da test bang Swagger/Postman
-- [ ] Khong conflict voi branch develop
+- [ ] Code chạy được, không bị lỗi
+- [ ] Đã test bằng Swagger/Postman
+- [ ] Không conflict với branch develop
 
-## Screenshot (neu co UI)
-(Dan hinh man hinh o day)
+## Screenshot (nếu có UI)
+(Dán hình màn hình ở đây)
 
-## Ghi chu
-- Can merge PR cua Tinh (setup DbContext) truoc khi merge PR nay
+## Ghi chú
+- Cần merge PR của Tính (setup DbContext) trước khi merge PR này
 ```
 
-### Buoc 4: Assign reviewer
-- Chon 1 nguoi trong nhom review
-- Doi ho approve roi moi MERGE
+### Bước 4: Assign reviewer
+- Chọn 1 người trong nhóm review
+- Đợi họ approve rồi mới MERGE
 
-### Buoc 5: Merge
+### Bước 5: Merge
 - Click "Merge Pull Request"
-- Chon "Squash and Merge" (gop tat ca commit thanh 1)
+- Chọn "Squash and Merge" (gộp tất cả commit thành 1)
 - Delete branch sau khi merge
 
 ---
 
-## 5. Xu ly Conflict
+## 5. Xử lý Conflict
 
-Khi merge bi conflict:
+Khi merge bị conflict:
 ```
 git checkout develop
 git pull origin develop
-git checkout feature/ten-chuc-nang
+git checkout feature/tên-chức-năng
 git merge develop
-# Sua conflict trong cac file
+# Sửa conflict trong các file
 git add .
 git commit -m "fix: resolve merge conflict"
-git push origin feature/ten-chuc-nang
+git push origin feature/tên-chức-năng
 ```
 
 ---
 
-## 6. Quy tac vang
+## 6. Quy tắc vàng
 
-1. KHONG BAO GIO push truc tiep len main hoac develop
-2. LUON tao branch moi tu develop
-3. LUON tao Pull Request de merge
-4. MOI ngay pull develop ve 1 lan de tranh conflict lon
-5. Commit THUONG XUYEN, dung de qua nhieu thay doi trong 1 commit
+1. KHÔNG BAO GIỜ push trực tiếp lên main hoặc develop
+2. LUÔN tạo branch mới từ develop
+3. LUÔN tạo Pull Request để merge
+4. MỖI ngày pull develop về 1 lần để tránh conflict lớn
+5. Commit THƯỜNG XUYÊN, đừng để quá nhiều thay đổi trong 1 commit

@@ -1,8 +1,8 @@
-﻿# Hướng Dẫn Commit và Pull Request
+# Hướng Dẫn Commit và Pull Request
 
 ## 1. Quy trình làm việc hàng ngày
 
-```
+`
 Bước 1: Pull code mới nhất
   git checkout develop
   git pull origin develop
@@ -12,7 +12,7 @@ Bước 2: Tạo branch mới từ develop
 
 Bước 3: Code xong, commit
   git add .
-  git commit -m "feat: mô tả ngắn gọn"
+  git commit -m "feat: add new feature"
 
 Bước 4: Push lên GitHub
   git push origin feature/tên-chức-năng
@@ -21,29 +21,29 @@ Bước 5: Vào GitHub tạo Pull Request
   Base: develop  <--  Compare: feature/tên-chức-năng
 
 Bước 6: Đợi team review, approve rồi MERGE
-```
+`
 
 ---
 
 ## 2. Đặt tên Branch
 
-```
-feature/auth-login          ← Chức năng mới
-feature/department-crud     ← Chức năng mới
-fix/login-token-expired     ← Sửa lỗi
-refactor/doctor-service     ← Tái cấu trúc code
-```
+`
+feature/auth-login          ➔ Chức năng mới
+feature/department-crud     ➔ Chức năng mới
+fix/login-token-expired     ➔ Sửa lỗi
+refactor/doctor-service     ➔ Tái cấu trúc code
+`
 
 ### Ví dụ cụ thể cho từng người
 
-```
+`
 Tính:   feature/auth-register
         feature/auth-login
         feature/auth-jwt
         feature/user-management
         feature/role-permission
 
-Triết:  feature/department-crud
+Triết:  feature/department-service
         feature/department-image-upload
         feature/doctor-crud-admin
 
@@ -57,7 +57,7 @@ Thuận:  feature/cart-add-remove
         feature/checkout
         feature/order-history
         feature/payment-vnpay
-```
+`
 
 ---
 
@@ -65,9 +65,9 @@ Thuận:  feature/cart-add-remove
 
 ### Format
 
-```
+`
 <loại>: <mô tả ngắn gọn bằng tiếng Anh (English ONLY)>
-```
+`
 
 ### Các loại commit
 
@@ -83,61 +83,61 @@ Thuận:  feature/cart-add-remove
 
 ### Ví dụ commit tốt
 
-```
+`
 feat: add POST /api/auth/register API
 feat: add login screen
 fix: resolve crash when doctor list is empty
 refactor: split BookingService into smaller methods
 docs: add API endpoints to README
 chore: configure JWT in appsettings.json
-```
+`
 
 ### Ví dụ commit XẤU (không nên)
 
-```
-update code              ← Quá chung chung
-fix bug                  ← Bug gì? Ở đâu?
-asdkjahsd               ← Vô nghĩa
-thêm nhiều thứ           ← Thêm cái gì?
-```
+`
+update code              ➔ Quá chung chung
+fix bug                  ➔ Bug gì ở đâu?
+asdkjahsd               ➔ Vô nghĩa
+thêm nhiều thứ           ➔ Thêm cái gì?
+`
 
 ---
 
 ## 4. Tạo Pull Request trên GitHub
 
-### Bước 1: Vào GitHub repo, click "Pull Requests" → "New Pull Request"
+### Bước 1: Vào GitHub repo, click "Pull Requests" ➔ "New Pull Request"
 
 ### Bước 2: Chọn branch
 
-```
+`
 base: develop  <----  compare: feature/auth-login
-```
+`
 
 ### Bước 3: Điền thông tin PR
 
 **Tiêu đề PR:**
-```
-[Tính] feat: Thêm chức năng đăng nhập và đăng ký
-```
+`
+[Tính] feat: add login and registration feature
+`
 
 **Nội dung PR (copy mẫu này):**
-```
+`
 ## Mô tả
-- Thêm API POST /api/auth/register (đăng ký)
-- Thêm API POST /api/auth/login (đăng nhập, trả JWT token)
-- Thêm màn hình Login và Register trên Flutter
+- Add API POST /api/auth/register
+- Add API POST /api/auth/login
+- Add Flutter Login and Register screens
 
 ## Checklist
-- [ ] Code chạy được, không bị lỗi
-- [ ] Đã test bằng Swagger/Postman
-- [ ] Không conflict với branch develop
+- [ ] Code runs successfully, no errors
+- [ ] Tested with Swagger/Postman
+- [ ] No conflicts with develop branch
 
 ## Screenshot (nếu có UI)
 (Dán hình màn hình ở đây)
 
 ## Ghi chú
 - Cần merge PR của Tính (setup DbContext) trước khi merge PR này
-```
+`
 
 ### Bước 4: Assign reviewer
 - Chọn 1 người trong nhóm review
@@ -153,7 +153,7 @@ base: develop  <----  compare: feature/auth-login
 ## 5. Xử lý Conflict
 
 Khi merge bị conflict:
-```
+`
 git checkout develop
 git pull origin develop
 git checkout feature/tên-chức-năng
@@ -162,7 +162,7 @@ git merge develop
 git add .
 git commit -m "fix: resolve merge conflict"
 git push origin feature/tên-chức-năng
-```
+`
 
 ---
 

@@ -66,14 +66,14 @@ namespace MedicalAppointment.API.Data
             modelBuilder.Entity<Role>(entity =>
             {
                 entity.HasKey(r => r.Id);
-                entity.HasIndex(r => r.Code).IsUnique();
-                entity.Property(r => r.Code).IsRequired().HasMaxLength(50);
+                entity.HasIndex(r => r.Key).IsUnique();
+                entity.Property(r => r.Key).IsRequired().HasMaxLength(50);
                 entity.Property(r => r.Name).IsRequired().HasMaxLength(100);
 
                 // Seed Data: Tạo sẵn 2 role mặc định khi chạy Migration
                 entity.HasData(
-                    new Role { Id = 1, Code = "ADMIN", Name = "Quản trị viên", Description = "Toàn quyền hệ thống", CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-                    new Role { Id = 2, Code = "PATIENT", Name = "Bệnh nhân", Description = "Người dùng đặt lịch", CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+                    new Role { Id = 1, Key = "ADMIN", Name = "Quản trị viên", Description = "Toàn quyền hệ thống", CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                    new Role { Id = 2, Key = "PATIENT", Name = "Bệnh nhân", Description = "Người dùng đặt lịch", CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
                 );
             });
 

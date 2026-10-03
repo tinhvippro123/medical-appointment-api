@@ -1,4 +1,4 @@
-# Hướng Dẫn Commit và Pull Request
+﻿# Hướng Dẫn Commit và Pull Request
 
 ## 1. Quy trình làm việc hàng ngày
 
@@ -43,7 +43,7 @@ Tính:   feature/auth-register
         feature/user-management
         feature/role-permission
 
-Triết:  feature/department-service
+Triết:  feature/department-crud
         feature/department-image-upload
         feature/doctor-crud-admin
 

@@ -1,4 +1,4 @@
-# Hướng Dẫn Commit và Pull Request
+﻿# Hướng Dẫn Commit và Pull Request
 
 ## 1. Quy trình làm việc hàng ngày
 
@@ -66,30 +66,30 @@ Thuận:  feature/cart-add-remove
 ### Format
 
 ```
-<loại>: <mô tả ngắn gọn bằng tiếng Việt hoặc tiếng Anh>
+<loại>: <mô tả ngắn gọn bằng tiếng Anh (English ONLY)>
 ```
 
 ### Các loại commit
 
 | Loại | Khi nào dùng | Ví dụ |
 |------|-------------|-------|
-| feat | Thêm chức năng mới | feat: thêm API đăng ký người dùng |
-| fix | Sửa lỗi | fix: sửa lỗi token hết hạn khi login |
-| refactor | Sửa code nhưng không đổi chức năng | refactor: tối ưu DoctorService |
-| docs | Cập nhật tài liệu | docs: cập nhật README |
-| style | Format code, sửa lỗi chính tả | style: format code AuthController |
-| chore | Công việc setup, config | chore: thêm package Dio vào pubspec |
-| test | Thêm/sửa test | test: thêm unit test cho AuthService |
+| feat | Thêm chức năng mới | feat: add user registration API |
+| fix | Sửa lỗi | fix: resolve token expiration on login |
+| refactor | Sửa code nhưng không đổi chức năng | refactor: optimize DoctorService |
+| docs | Cập nhật tài liệu | docs: update README |
+| style | Format code, sửa lỗi chính tả | style: format AuthController code |
+| chore | Công việc setup, config | chore: add Dio package to pubspec |
+| test | Thêm/sửa test | test: add unit tests for AuthService |
 
 ### Ví dụ commit tốt
 
 ```
-feat: thêm API POST /api/auth/register
-feat: thêm màn hình đăng nhập
-fix: sửa lỗi crash khi danh sách bác sĩ rỗng
-refactor: tách BookingService thành các method nhỏ
-docs: thêm API endpoints vào README
-chore: cấu hình JWT trong appsettings.json
+feat: add POST /api/auth/register API
+feat: add login screen
+fix: resolve crash when doctor list is empty
+refactor: split BookingService into smaller methods
+docs: add API endpoints to README
+chore: configure JWT in appsettings.json
 ```
 
 ### Ví dụ commit XẤU (không nên)

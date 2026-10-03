@@ -37,26 +37,21 @@ refactor/doctor-service     ➔ Tái cấu trúc code
 ### Ví dụ cụ thể cho từng người
 
 `
-Tính:   feature/auth-register
-        feature/auth-login
-        feature/auth-jwt
-        feature/user-management
-        feature/role-permission
+Tính (Auth & Users):
+        feature/auth            --> (Gộp chung Register, Login, JWT)
+        feature/user-management --> (Quản lý User, Role)
 
-Triết:  feature/department-crud
-        feature/department-image-upload
-        feature/doctor-crud-admin
+Triết (Admin & Clinic):
+        feature/department-crud --> (Quản lý Khoa, Upload hình)
+        feature/doctor-admin    --> (Quản lý Bác sĩ - Admin)
 
-Thịnh:  feature/home-screen
-        feature/doctor-list
-        feature/doctor-detail
-        feature/doctor-search
+Thịnh (Patient App - Browse):
+        feature/home-screen     --> (Màn hình chính)
+        feature/doctor-search   --> (Tìm kiếm & xem chi tiết Bác sĩ)
 
-Thuận:  feature/cart-add-remove
-        feature/cart-update
-        feature/checkout
-        feature/order-history
-        feature/payment-vnpay
+Thuận (Patient App - Booking):
+        feature/cart-booking    --> (Giỏ hàng & Đặt lịch)
+        feature/checkout-payment--> (Thanh toán VNPay & Lịch sử)
 `
 
 ---
@@ -173,3 +168,16 @@ git push origin feature/tên-chức-năng
 3. LUÔN tạo Pull Request để merge
 4. MỖI ngày pull develop về 1 lần để tránh conflict lớn
 5. Commit THƯỜNG XUYÊN, đừng để quá nhiều thay đổi trong 1 commit
+
+---
+
+## 7. Quy tắc làm việc nhóm (Tránh đụng code & chờ đợi)
+
+Để không ai phải ngồi chờ ai và tránh conflict khi ghép code, team áp dụng chiến thuật **Giao tiếp qua Interface (Mocking)**:
+
+1. **KHÔNG sửa chung file:** Mỗi người làm việc trên Controller và Service của riêng mình. Trừ Program.cs và ApplicationDbContext.cs, tuyệt đối hạn chế sửa chéo file của nhau.
+2. **Không chờ đợi nhau:** Nếu bạn cần dữ liệu từ Module của bạn khác mà họ chưa code xong:
+   - Tự tạo một Interface (VD: IDoctorService) khai báo hàm bạn cần.
+   - Tự viết class Fake...Service trả về dữ liệu ảo (Mock Data) để bạn test tính năng của bạn trước.
+   - Báo cho người kia biết để họ implement code thật vào Interface đó sau.
+3. **Hoán đổi dễ dàng:** Khi code thật đã xong, chỉ cần vào Program.cs đổi dòng đăng ký từ FakeService sang RealService là hệ thống tự chạy, không cần sửa một dòng code logic nào.

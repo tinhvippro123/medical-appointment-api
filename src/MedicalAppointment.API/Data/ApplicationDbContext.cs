@@ -31,6 +31,10 @@ namespace MedicalAppointment.API.Data
                 {
                     entry.Entity.UpdatedAt = DateTime.UtcNow;
                 }
+                if (entry.State == EntityState.Added)
+                {
+                    entry.Entity.CreatedAt = DateTime.UtcNow;
+                }
             }
             return base.SaveChanges();
         }
@@ -44,6 +48,10 @@ namespace MedicalAppointment.API.Data
                 if (entry.State == EntityState.Modified)
                 {
                     entry.Entity.UpdatedAt = DateTime.UtcNow;
+                }
+                if (entry.State == EntityState.Added)
+                {
+                    entry.Entity.CreatedAt = DateTime.UtcNow;
                 }
             }
             return base.SaveChangesAsync(cancellationToken);
@@ -64,8 +72,8 @@ namespace MedicalAppointment.API.Data
 
                 // Seed Data: Tạo sẵn 2 role mặc định khi chạy Migration
                 entity.HasData(
-                    new Role { Id = 1, Code = "ADMIN", Name = "Quản trị viên", Description = "Toàn quyền hệ thống" },
-                    new Role { Id = 2, Code = "PATIENT", Name = "Bệnh nhân", Description = "Người dùng đặt lịch" }
+                    new Role { Id = 1, Code = "ADMIN", Name = "Quản trị viên", Description = "Toàn quyền hệ thống", CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                    new Role { Id = 2, Code = "PATIENT", Name = "Bệnh nhân", Description = "Người dùng đặt lịch", CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
                 );
             });
 

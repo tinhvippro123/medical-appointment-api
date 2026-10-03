@@ -10,19 +10,13 @@
     <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.12" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.12" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\MedicalAppointment.Shared\MedicalAppointment.Shared.csproj" />
-    <ProjectReference Include="..\MedicalAppointment.Auth\MedicalAppointment.Auth.csproj" />
-    <ProjectReference Include="..\MedicalAppointment.Department\MedicalAppointment.Department.csproj" />
-    <ProjectReference Include="..\MedicalAppointment.Doctor\MedicalAppointment.Doctor.csproj" />
-    <ProjectReference Include="..\MedicalAppointment.Booking\MedicalAppointment.Booking.csproj" />
   </ItemGroup>
 
 </Project>

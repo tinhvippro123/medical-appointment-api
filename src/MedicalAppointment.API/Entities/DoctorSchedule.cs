@@ -1,4 +1,4 @@
-namespace MedicalAppointment.API.Entities
+﻿namespace MedicalAppointment.API.Entities
 {
     public class DoctorSchedule : BaseEntity
     {
@@ -7,10 +7,9 @@ namespace MedicalAppointment.API.Entities
         public int DayOfWeek { get; set; }        // 0=CN, 1=T2, ..., 6=T7
         public TimeSpan StartTime { get; set; }    // 07:00
         public TimeSpan EndTime { get; set; }      // 11:30
-        public int MaxPatients { get; set; } = 20; // S? b?nh nh�n t?i da m?i khung gi?
+        public int MaxPatients { get; set; } = 20; // Số bệnh nhân tối đa mỗi khung giờ
 
         // Navigation
         public Doctor Doctor { get; set; } = null!;
     }
 }
-

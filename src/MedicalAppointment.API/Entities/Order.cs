@@ -1,4 +1,4 @@
-namespace MedicalAppointment.API.Entities
+﻿namespace MedicalAppointment.API.Entities
 {
     public class Order : BaseEntity
     {
@@ -6,14 +6,13 @@ namespace MedicalAppointment.API.Entities
         public int UserId { get; set; }
         public decimal TotalAmount { get; set; }
         public string Status { get; set; } = "Pending";           // Pending, Confirmed, Completed, Cancelled
-        public string? CancellationReason { get; set; }           // L� do h?y
+        public string? CancellationReason { get; set; }           // Lý do hủy
         public string PaymentMethod { get; set; } = "Cash";       // Cash, VNPay, VietQR
         public string PaymentStatus { get; set; } = "Unpaid";     // Unpaid, Paid
-        public string? TransactionId { get; set; } // M� giao d?ch VNPay
+        public string? TransactionId { get; set; }                // Mã giao dịch VNPay
 
         // Navigation
         public User User { get; set; } = null!;
         public ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
     }
 }
-

@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using MedicalAppointment.API.Entities;
 
 namespace MedicalAppointment.API.Data
@@ -8,7 +8,7 @@ namespace MedicalAppointment.API.Data
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) 
             : base(options) { }
 
-        // --- 10 DbSets ---
+        // --- 11 DbSets ---
         public DbSet<Role> Roles { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<Department> Departments { get; set; }
@@ -21,6 +21,7 @@ namespace MedicalAppointment.API.Data
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderDetail> OrderDetails { get; set; }
 
+        // Tự động cập nhật UpdatedAt khi sửa dữ liệu
         public override int SaveChanges()
         {
             var entries = ChangeTracker.Entries<BaseEntity>();
@@ -34,6 +35,7 @@ namespace MedicalAppointment.API.Data
             return base.SaveChanges();
         }
 
+        // Tự động cập nhật UpdatedAt khi sửa dữ liệu (phiên bản Async)
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             var entries = ChangeTracker.Entries<BaseEntity>();
@@ -47,7 +49,7 @@ namespace MedicalAppointment.API.Data
             return base.SaveChangesAsync(cancellationToken);
         }
 
-
+        // Cấu hình chi tiết cho từng bảng trong Database
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -60,10 +62,10 @@ namespace MedicalAppointment.API.Data
                 entity.Property(r => r.Code).IsRequired().HasMaxLength(50);
                 entity.Property(r => r.Name).IsRequired().HasMaxLength(100);
 
-                // Seed Data
+                // Seed Data: Tạo sẵn 2 role mặc định khi chạy Migration
                 entity.HasData(
-                    new Role { Id = 1, Code = "ADMIN", Name = "Qu?n tr? vi�n", Description = "To�n quy?n h? th?ng" },
-                    new Role { Id = 2, Code = "PATIENT", Name = "B?nh nh�n", Description = "Ngu?i d�ng d?t l?ch" }
+                    new Role { Id = 1, Code = "ADMIN", Name = "Quản trị viên", Description = "Toàn quyền hệ thống" },
+                    new Role { Id = 2, Code = "PATIENT", Name = "Bệnh nhân", Description = "Người dùng đặt lịch" }
                 );
             });
 
@@ -234,4 +236,3 @@ namespace MedicalAppointment.API.Data
         }
     }
 }
-

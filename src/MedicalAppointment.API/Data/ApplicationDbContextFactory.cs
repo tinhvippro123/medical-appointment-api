@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
 namespace MedicalAppointment.API.Data
@@ -8,11 +8,10 @@ namespace MedicalAppointment.API.Data
         public ApplicationDbContext CreateDbContext(string[] args)
         {
             var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-            // Sửa lại kết nối trỏ vào SQLEXPRESS thay vì LocalDB
+            // Kết nối tới SQLEXPRESS
             optionsBuilder.UseSqlServer("Server=.\\SQLEXPRESS;Database=MedicalAppointmentDb;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true");
 
             return new ApplicationDbContext(optionsBuilder.Options);
         }
     }
 }
-

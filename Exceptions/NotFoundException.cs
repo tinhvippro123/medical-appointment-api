@@ -1,6 +1,3 @@
 namespace MedicalAppointment.API.Exceptions;
 
-public class NotFoundException : AppException
-{
-    public NotFoundException(ErrorCode errorCode) : base(errorCode) { }
-}
+public class NotFoundException(ErrorCode errorCode) : AppException(errorCode);

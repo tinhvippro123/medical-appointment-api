@@ -7,18 +7,13 @@ using MedicalAppointment.API.Entities;
 
 namespace MedicalAppointment.API.Middlewares;
 
-public class GlobalExceptionHandler : IExceptionHandler
+public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
 {
-    private readonly ILogger<GlobalExceptionHandler> _logger;
-
-    public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger)
-    {
-        _logger = logger;
-    }
+    private readonly ILogger<GlobalExceptionHandler> _logger = logger;
 
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
-        _logger.LogError($"Hê thống có lỗi: {exception.Message}");
+        _logger.LogError("Hệ thống có lỗi {exception.Message}",exception.Message);
         var errorResponse = exception switch
         {
             BadRequestException badRequestException => new ErrorDetails
@@ -51,5 +46,4 @@ public class GlobalExceptionHandler : IExceptionHandler
         await httpContext.Response.WriteAsJsonAsync(errorResponse, cancellationToken);
         return true;
     }
-    
 }

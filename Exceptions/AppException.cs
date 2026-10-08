@@ -1,9 +1,5 @@
 namespace MedicalAppointment.API.Exceptions;
 
-public abstract class AppException : Exception{
-    public ErrorCode ErrorCode { get; }
-
-    protected AppException(ErrorCode errorCode) : base(errorCode.Message){
-        ErrorCode = errorCode;
-    }
+public abstract class AppException(ErrorCode errorCode) : Exception(errorCode.Message){
+    public ErrorCode ErrorCode { get; } = errorCode;
 }

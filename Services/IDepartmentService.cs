@@ -9,5 +9,7 @@ public interface IDepartmentService
     Task<DepartmentDto> CreateAsync(CreateDepartmentDto dto);
     Task<DepartmentDto> UpdateAsync(int id, UpdateDepartmentDto dto);
     Task DeleteAsync(int id);
+    Task<DepartmentDto> UploadImageAsync(int id, IFormFile file);
+    Task<DepartmentDto> DeleteImageAsync(int id);
 }
 

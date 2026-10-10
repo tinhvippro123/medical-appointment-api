@@ -49,5 +49,21 @@ public class DepartmentController(IDepartmentService departmentService) : Contro
         await _departmentService.DeleteAsync(id);
         return NoContent();
     }
+
+    // POST /api/departments/{id}/image — Upload ảnh chuyên khoa
+    [HttpPost("{id}/image")]
+    public async Task<IActionResult> UploadImage(int id, IFormFile file)
+    {
+        var department = await _departmentService.UploadImageAsync(id, file);
+        return Ok(department);
+    }
+
+    // DELETE /api/departments/{id}/image — Xóa ảnh chuyên khoa
+    [HttpDelete("{id}/image")]
+    public async Task<IActionResult> DeleteImage(int id)
+    {
+        var department = await _departmentService.DeleteImageAsync(id);
+        return Ok(department);
+    }
 }
 

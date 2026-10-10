@@ -12,6 +12,8 @@ public class ErrorCode(string code, string message)
         public static readonly ErrorCode DEPARTMENT_NOT_FOUND = new("DEPARTMENT_NOT_FOUND", "Không tìm thấy chuyên khoa!");
         public static readonly ErrorCode DEPARTMENT_NAME_EXISTS = new("DEPARTMENT_NAME_EXISTS", "Tên chuyên khoa đã tồn tại!");
         public static readonly ErrorCode DEPARTMENT_HAS_DOCTORS = new("DEPARTMENT_HAS_DOCTORS", "Khoa còn bác sĩ, không thể xóa!");
+        public static readonly ErrorCode DEPARTMENT_IMAGE_INVALID = new("DEPARTMENT_IMAGE_INVALID", "File ảnh không hợp lệ! Chỉ chấp nhận .jpg, .jpeg, .png và dung lượng dưới 5MB.");
+        public static readonly ErrorCode DEPARTMENT_NO_IMAGE = new("DEPARTMENT_NO_IMAGE", "Chuyên khoa này chưa có ảnh!");
         // --- DOCTOR ---
         public static readonly ErrorCode DOCTOR_NOT_FOUND = new("DOCTOR_NOT_FOUND", "Không tìm thấy thông tin bác sĩ!");
         public static readonly ErrorCode DOCTOR_SCHEDULE_CONFLICT = new("DOCTOR_SCHEDULE_CONFLICT", "Bác sĩ đã có lịch trong khung giờ này!");

@@ -21,6 +21,7 @@ builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 var app = builder.Build();
 
 app.UseExceptionHandler();
+app.UseStaticFiles(); // Phục vụ file tĩnh từ wwwroot
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

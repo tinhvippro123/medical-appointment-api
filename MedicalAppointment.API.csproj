@@ -18,5 +18,11 @@
     </PackageReference>
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
   </ItemGroup>
+  <ItemGroup>
+    <Watch Remove="wwwroot\**" />
+    <Watch Remove="wwwroot\**\*" />
+    <Content Update="wwwroot\**\*" Watch="false" />
+    <None Update="wwwroot\**\*" Watch="false" />
+  </ItemGroup>
 
 </Project>

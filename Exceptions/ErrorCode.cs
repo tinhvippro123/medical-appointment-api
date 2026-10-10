@@ -8,6 +8,10 @@ public class ErrorCode(string code, string message)
     public static readonly ErrorCode PHONE_ALREADY_EXISTS = new("PHONE_ALREADY_EXISTS", "Số điện thoại này đã được sử dụng!");
         public static readonly ErrorCode INVALID_CREDENTIALS = new("INVALID_CREDENTIALS", "Số điện thoại hoặc mật khẩu không chính xác!");
         public static readonly ErrorCode ACCOUNT_DISABLED = new("ACCOUNT_DISABLED", "Tài khoản của bạn đã bị khóa!");
+        // --- DEPARTMENT ---
+        public static readonly ErrorCode DEPARTMENT_NOT_FOUND = new("DEPARTMENT_NOT_FOUND", "Không tìm thấy chuyên khoa!");
+        public static readonly ErrorCode DEPARTMENT_NAME_EXISTS = new("DEPARTMENT_NAME_EXISTS", "Tên chuyên khoa đã tồn tại!");
+        public static readonly ErrorCode DEPARTMENT_HAS_DOCTORS = new("DEPARTMENT_HAS_DOCTORS", "Khoa còn bác sĩ, không thể xóa!");
         // --- DOCTOR ---
         public static readonly ErrorCode DOCTOR_NOT_FOUND = new("DOCTOR_NOT_FOUND", "Không tìm thấy thông tin bác sĩ!");
         public static readonly ErrorCode DOCTOR_SCHEDULE_CONFLICT = new("DOCTOR_SCHEDULE_CONFLICT", "Bác sĩ đã có lịch trong khung giờ này!");

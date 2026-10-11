@@ -18,4 +18,10 @@ public class ErrorCode(string code, string message)
         public static readonly ErrorCode UNAUTHORIZED = new("UNAUTHORIZED", "Vui lòng đăng nhập để tiếp tục!");
         public static readonly ErrorCode FORBIDDEN = new("FORBIDDEN", "Bạn không có quyền thực hiện hành động này!");
         public static readonly ErrorCode INTERNAL_SERVER_ERROR = new("INTERNAL_SERVER_ERROR", "Đã xảy ra lỗi hệ thống nghiêm trọng!");
+        // --- AUTH / USER ---
+        public static readonly ErrorCode USER_NOT_FOUND = new("USER_NOT_FOUND", "Không tìm thấy người dùng!");
+        public static readonly ErrorCode PASSWORD_MISMATCH = new("PASSWORD_MISMATCH", "Mật khẩu xác nhận không khớp!");
+        public static readonly ErrorCode WRONG_OLD_PASSWORD = new("WRONG_OLD_PASSWORD", "Mật khẩu cũ không chính xác!");
+        public static readonly ErrorCode SAME_OLD_PASSWORD = new("SAME_OLD_PASSWORD", "Mật khẩu mới không được trùng với mật khẩu cũ!");
+
 }

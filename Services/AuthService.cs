@@ -52,5 +52,26 @@ public class AuthService(ApplicationDbContext context, IJwtProvider jwtProvider,
         return jwtProvider.GenerateToken(user);
     }
 
+    public async Task ChangePassword(int userId, ChangePasswordRequest request)
+    {
+        if (request.NewPassword != request.ConfirmPassword)
+        {
+            throw new BadRequestException(ErrorCode.PASSWORD_MISMATCH);
+        }
+
+        var user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId) ?? throw new BadRequestException(ErrorCode.USER_NOT_FOUND);
+        if (!passwordHasher.Verifty(request.OldPassword, user.Password))
+        {
+            throw new BadRequestException(ErrorCode.WRONG_OLD_PASSWORD);
+        }
+
+        if (request.NewPassword == request.OldPassword)
+        {
+            throw new BadRequestException(ErrorCode.SAME_OLD_PASSWORD);
+        }
+
+        user.Password = passwordHasher.Hash(request.NewPassword);
+        await context.SaveChangesAsync();
+    }
  
 }

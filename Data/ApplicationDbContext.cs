@@ -81,10 +81,12 @@ namespace MedicalAppointment.API.Data
             modelBuilder.Entity<User>(entity =>
             {
                 entity.HasKey(u => u.Id);
-                entity.HasIndex(u => u.Email).IsUnique();
+                entity.HasIndex(u => u.Email).IsUnique().HasFilter("[Email] IS NOT NULL");
+                entity.Property(u => u.Email).HasMaxLength(256);
+                entity.HasIndex(u => u.Phone).IsUnique();
+                entity.Property(u => u.Phone).IsRequired().HasMaxLength(20);
                 entity.Property(u => u.FullName).IsRequired().HasMaxLength(100);
-                entity.Property(u => u.Email).IsRequired().HasMaxLength(256);
-                entity.Property(u => u.PasswordHash).IsRequired();
+                entity.Property(u => u.Password).IsRequired();
                 entity.Property(u => u.IsActive).HasDefaultValue(true);
 
                 entity.HasOne(u => u.Role)

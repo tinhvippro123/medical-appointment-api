@@ -34,7 +34,7 @@ public class PatientProfilesController(IPatientProfileService patientProfileServ
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreatePatientProfileRequest request)
+    public async Task<IActionResult> Create(CreatePatientProfileRequest request)
     {
         int? userId = GetCurrentUserId();
         if (userId == null) return Unauthorized();
@@ -44,7 +44,7 @@ public class PatientProfilesController(IPatientProfileService patientProfileServ
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdatePatientProfileRequest request)
+    public async Task<IActionResult> Update(int id, UpdatePatientProfileRequest request)
     {
         int? userId = GetCurrentUserId();
         if (userId == null) return Unauthorized();

@@ -18,4 +18,6 @@ public class ErrorCode(string code, string message)
         public static readonly ErrorCode UNAUTHORIZED = new("UNAUTHORIZED", "Vui lòng đăng nhập để tiếp tục!");
         public static readonly ErrorCode FORBIDDEN = new("FORBIDDEN", "Bạn không có quyền thực hiện hành động này!");
         public static readonly ErrorCode INTERNAL_SERVER_ERROR = new("INTERNAL_SERVER_ERROR", "Đã xảy ra lỗi hệ thống nghiêm trọng!");
+        // --- PATIENT PROFILE ---
+        public static readonly ErrorCode PROFILE_IN_USE = new("PROFILE_IN_USE", "Hồ sơ đang được sử dụng trong giỏ hàng hoặc đơn hàng, không thể xóa!");
 }

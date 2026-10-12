@@ -36,14 +36,11 @@ public class PatientProfileService(ApplicationDbContext context) : IPatientProfi
 
     public async Task<PatientProfileResponse> CreateAsync(int userId, CreatePatientProfileRequest request)
     {
-        ValidateRequest(request.FullName, request.DateOfBirth, request.Gender, request.Relationship,
-            request.Ethnicity, request.Occupation, request.IdentityCardNumber, request.HealthInsuranceNumber);
-
         var profile = new PatientProfile
         {
             UserId = userId,
             FullName = request.FullName.Trim(),
-            DateOfBirth = request.DateOfBirth,
+            DateOfBirth = request.DateOfBirth!.Value,
             Gender = request.Gender.Trim(),
             Ethnicity = string.IsNullOrWhiteSpace(request.Ethnicity) ? null : request.Ethnicity.Trim(),
             Occupation = string.IsNullOrWhiteSpace(request.Occupation) ? null : request.Occupation.Trim(),
@@ -62,15 +59,12 @@ public class PatientProfileService(ApplicationDbContext context) : IPatientProfi
 
     public async Task<PatientProfileResponse> UpdateAsync(int id, int userId, UpdatePatientProfileRequest request)
     {
-        ValidateRequest(request.FullName, request.DateOfBirth, request.Gender, request.Relationship,
-            request.Ethnicity, request.Occupation, request.IdentityCardNumber, request.HealthInsuranceNumber);
-
         var profile = await _context.PatientProfiles
             .Where(p => p.Id == id && p.UserId == userId)
             .FirstOrDefaultAsync() ?? throw new NotFoundException(ErrorCode.RESOURCE_NOT_FOUND);
 
         profile.FullName = request.FullName.Trim();
-        profile.DateOfBirth = request.DateOfBirth;
+        profile.DateOfBirth = request.DateOfBirth!.Value;
         profile.Gender = request.Gender.Trim();
         profile.Ethnicity = string.IsNullOrWhiteSpace(request.Ethnicity) ? null : request.Ethnicity.Trim();
         profile.Occupation = string.IsNullOrWhiteSpace(request.Occupation) ? null : request.Occupation.Trim();
@@ -96,52 +90,11 @@ public class PatientProfileService(ApplicationDbContext context) : IPatientProfi
 
         if (hasCartItems || hasOrderDetails)
         {
-            throw new BadRequestException(new ErrorCode("PROFILE_IN_USE", "Hồ sơ đang được sử dụng trong giỏ hàng hoặc đơn hàng, không thể xóa!"));
+            throw new BadRequestException(ErrorCode.PROFILE_IN_USE);
         }
 
         _context.PatientProfiles.Remove(profile);
         await _context.SaveChangesAsync();
-    }
-
-    private static void ValidateRequest(
-        string fullName, DateTime dateOfBirth, string gender, string relationship,
-        string? ethnicity, string? occupation, string? identityCardNumber, string? healthInsuranceNumber)
-    {
-        if (string.IsNullOrWhiteSpace(fullName))
-            throw new BadRequestException(new ErrorCode("INVALID_FULL_NAME", "Họ tên không được để trống!"));
-        
-        if (string.IsNullOrWhiteSpace(gender))
-            throw new BadRequestException(new ErrorCode("INVALID_GENDER", "Giới tính không được để trống!"));
-
-        if (string.IsNullOrWhiteSpace(relationship))
-            throw new BadRequestException(new ErrorCode("INVALID_RELATIONSHIP", "Mối quan hệ không được để trống!"));
-
-        if (fullName.Trim().Length > 100)
-            throw new BadRequestException(new ErrorCode("MAX_LENGTH_EXCEEDED", "Họ tên không được vượt quá 100 ký tự!"));
-
-        if (gender.Trim().Length > 10)
-            throw new BadRequestException(new ErrorCode("MAX_LENGTH_EXCEEDED", "Giới tính không được vượt quá 10 ký tự!"));
-
-        if (relationship.Trim().Length > 50)
-            throw new BadRequestException(new ErrorCode("MAX_LENGTH_EXCEEDED", "Mối quan hệ không được vượt quá 50 ký tự!"));
-
-        if (!string.IsNullOrWhiteSpace(ethnicity) && ethnicity.Trim().Length > 50)
-            throw new BadRequestException(new ErrorCode("MAX_LENGTH_EXCEEDED", "Dân tộc không được vượt quá 50 ký tự!"));
-
-        if (!string.IsNullOrWhiteSpace(occupation) && occupation.Trim().Length > 100)
-            throw new BadRequestException(new ErrorCode("MAX_LENGTH_EXCEEDED", "Nghề nghiệp không được vượt quá 100 ký tự!"));
-
-        if (!string.IsNullOrWhiteSpace(identityCardNumber) && identityCardNumber.Trim().Length > 20)
-            throw new BadRequestException(new ErrorCode("MAX_LENGTH_EXCEEDED", "CCCD/CMND không được vượt quá 20 ký tự!"));
-
-        if (!string.IsNullOrWhiteSpace(healthInsuranceNumber) && healthInsuranceNumber.Trim().Length > 50)
-            throw new BadRequestException(new ErrorCode("MAX_LENGTH_EXCEEDED", "Số BHYT không được vượt quá 50 ký tự!"));
-
-        if (dateOfBirth > DateTime.UtcNow)
-            throw new BadRequestException(new ErrorCode("INVALID_DOB", "Ngày sinh không được ở tương lai!"));
-            
-        if (dateOfBirth < new DateTime(1900, 1, 1))
-            throw new BadRequestException(new ErrorCode("INVALID_DOB", "Ngày sinh không được trước năm 1900!"));
     }
 
     private static PatientProfileResponse MapToResponse(PatientProfile profile)

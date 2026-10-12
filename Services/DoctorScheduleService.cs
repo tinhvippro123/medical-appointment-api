@@ -31,8 +31,6 @@ public class DoctorScheduleService(ApplicationDbContext context) : IDoctorSchedu
 
     public async Task<DoctorScheduleResponse> CreateScheduleAsync(int doctorId, CreateDoctorScheduleRequest request)
     {
-        ValidateScheduleInput(request.DayOfWeek, request.StartTime, request.EndTime, request.MaxPatients);
-
         var doctorExists = await _context.Doctors.AnyAsync(d => d.Id == doctorId && d.IsActive);
         if (!doctorExists)
         {
@@ -41,9 +39,9 @@ public class DoctorScheduleService(ApplicationDbContext context) : IDoctorSchedu
 
         var hasConflict = await _context.DoctorSchedules
             .AnyAsync(ds => ds.DoctorId == doctorId 
-                         && ds.DayOfWeek == request.DayOfWeek 
-                         && request.StartTime < ds.EndTime 
-                         && request.EndTime > ds.StartTime);
+                         && ds.DayOfWeek == request.DayOfWeek!.Value 
+                         && request.StartTime!.Value < ds.EndTime 
+                         && request.EndTime!.Value > ds.StartTime);
                          
         if (hasConflict)
         {
@@ -53,9 +51,9 @@ public class DoctorScheduleService(ApplicationDbContext context) : IDoctorSchedu
         var schedule = new DoctorSchedule
         {
             DoctorId = doctorId,
-            DayOfWeek = request.DayOfWeek,
-            StartTime = request.StartTime,
-            EndTime = request.EndTime,
+            DayOfWeek = request.DayOfWeek!.Value,
+            StartTime = request.StartTime!.Value,
+            EndTime = request.EndTime!.Value,
             MaxPatients = request.MaxPatients ?? DefaultMaxPatients
         };
 
@@ -67,8 +65,6 @@ public class DoctorScheduleService(ApplicationDbContext context) : IDoctorSchedu
 
     public async Task<DoctorScheduleResponse> UpdateScheduleAsync(int id, UpdateDoctorScheduleRequest request)
     {
-        ValidateScheduleInput(request.DayOfWeek, request.StartTime, request.EndTime, request.MaxPatients);
-
         var schedule = await _context.DoctorSchedules.FindAsync(id);
         if (schedule == null)
         {
@@ -78,18 +74,18 @@ public class DoctorScheduleService(ApplicationDbContext context) : IDoctorSchedu
         var hasConflict = await _context.DoctorSchedules
             .AnyAsync(ds => ds.Id != id 
                          && ds.DoctorId == schedule.DoctorId 
-                         && ds.DayOfWeek == request.DayOfWeek 
-                         && request.StartTime < ds.EndTime 
-                         && request.EndTime > ds.StartTime);
+                         && ds.DayOfWeek == request.DayOfWeek!.Value 
+                         && request.StartTime!.Value < ds.EndTime 
+                         && request.EndTime!.Value > ds.StartTime);
 
         if (hasConflict)
         {
             throw new BadRequestException(ErrorCode.DOCTOR_SCHEDULE_CONFLICT);
         }
 
-        schedule.DayOfWeek = request.DayOfWeek;
-        schedule.StartTime = request.StartTime;
-        schedule.EndTime = request.EndTime;
+        schedule.DayOfWeek = request.DayOfWeek!.Value;
+        schedule.StartTime = request.StartTime!.Value;
+        schedule.EndTime = request.EndTime!.Value;
         
         if (request.MaxPatients.HasValue)
         {
@@ -111,34 +107,6 @@ public class DoctorScheduleService(ApplicationDbContext context) : IDoctorSchedu
 
         _context.DoctorSchedules.Remove(schedule);
         await _context.SaveChangesAsync();
-    }
-
-    private void ValidateScheduleInput(int dayOfWeek, TimeSpan startTime, TimeSpan endTime, int? maxPatients)
-    {
-        if (dayOfWeek < 0 || dayOfWeek > 6)
-        {
-            throw new BadRequestException(new ErrorCode("INVALID_DAY_OF_WEEK", "DayOfWeek phải từ 0 đến 6 (Chủ nhật đến Thứ 7)."));
-        }
-
-        if (startTime < TimeSpan.Zero || startTime >= TimeSpan.FromHours(24))
-        {
-            throw new BadRequestException(new ErrorCode("INVALID_TIME", "StartTime phải lớn hơn hoặc bằng 00:00:00 và nhỏ hơn 24:00:00."));
-        }
-
-        if (endTime <= TimeSpan.Zero || endTime >= TimeSpan.FromHours(24))
-        {
-            throw new BadRequestException(new ErrorCode("INVALID_TIME", "EndTime phải lớn hơn 00:00:00 và nhỏ hơn 24:00:00."));
-        }
-
-        if (startTime >= endTime)
-        {
-            throw new BadRequestException(new ErrorCode("INVALID_TIME_RANGE", "StartTime phải nhỏ hơn EndTime."));
-        }
-
-        if (maxPatients.HasValue && maxPatients.Value <= 0)
-        {
-            throw new BadRequestException(new ErrorCode("INVALID_MAX_PATIENTS", "MaxPatients phải lớn hơn 0."));
-        }
     }
 
     private DoctorScheduleResponse MapToResponse(DoctorSchedule schedule)

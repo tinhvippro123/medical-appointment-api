@@ -19,7 +19,7 @@ public class DoctorSchedulesController(IDoctorScheduleService scheduleService) :
 
     [HttpPost("api/doctors/{id}/schedules")]
     [Authorize(Roles = "ADMIN")]
-    public async Task<IActionResult> CreateSchedule(int id, [FromBody] CreateDoctorScheduleRequest request)
+    public async Task<IActionResult> CreateSchedule(int id, CreateDoctorScheduleRequest request)
     {
         var schedule = await _scheduleService.CreateScheduleAsync(id, request);
         return StatusCode(201, schedule);
@@ -27,7 +27,7 @@ public class DoctorSchedulesController(IDoctorScheduleService scheduleService) :
 
     [HttpPut("api/schedules/{id}")]
     [Authorize(Roles = "ADMIN")]
-    public async Task<IActionResult> UpdateSchedule(int id, [FromBody] UpdateDoctorScheduleRequest request)
+    public async Task<IActionResult> UpdateSchedule(int id, UpdateDoctorScheduleRequest request)
     {
         var schedule = await _scheduleService.UpdateScheduleAsync(id, request);
         return Ok(schedule);

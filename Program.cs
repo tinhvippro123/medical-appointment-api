@@ -7,6 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
+builder.Services.AddScoped<MedicalAppointment.API.Services.IDoctorScheduleService, MedicalAppointment.API.Services.DoctorScheduleService>();
 
 var app = builder.Build();
 

@@ -7,10 +7,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
+builder.Services.AddScoped<MedicalAppointment.API.Services.IDoctorService, MedicalAppointment.API.Services.DoctorService>();
+builder.Services.AddSingleton<MedicalAppointment.API.Helpers.ImageStorageHelper>();
 
 var app = builder.Build();
 
 app.UseExceptionHandler();
+app.UseStaticFiles();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

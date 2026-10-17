@@ -1,13 +1,11 @@
-﻿namespace MedicalAppointment.API.Entities
+﻿namespace MedicalAppointment.API.Entities;
+public class Role : BaseEntity
 {
-    public class Role : BaseEntity
-    {
-        public int Id { get; set; }
-        public string Key { get; set; } = string.Empty;        // "ADMIN", "PATIENT"
-        public string Name { get; set; } = string.Empty;        // "Quản trị viên", "Bệnh nhân"
-        public string? Description { get; set; }
+    public int Id { get; set; }
+    public string Key { get; set; } = string.Empty;        // "ADMIN", "PATIENT"
+    public string Name { get; set; } = string.Empty;        // "Quản trị viên", "Bệnh nhân"
+    public string? Description { get; set; }
 
-        // Navigation
-        public ICollection<User> Users { get; set; } = new List<User>();
-    }
+    // Navigation
+    public ICollection<User> Users { get; set; } = [];
 }

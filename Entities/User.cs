@@ -1,27 +1,25 @@
-namespace MedicalAppointment.API.Entities
+namespace MedicalAppointment.API.Entities;
+public class User : BaseEntity
 {
-    public class User : BaseEntity
-    {
-        public int Id { get; set; }
-        public string FullName { get; set; } = string.Empty;
-        public string? Email { get; set; }
-        public string? Phone { get; set; }
-        public string Password { get; set; } = string.Empty;
-        public string? AvatarUrl { get; set; }
-        public int RoleId { get; set; }
+    public int Id { get; set; }
+    public string FullName { get; set; } = string.Empty;
+    public string? Email { get; set; }
+    public string Phone { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+    public string? AvatarUrl { get; set; }
+    public int RoleId { get; set; }
 
-        // Social Login (Bonus)
-        public string? GoogleId { get; set; }
-        public string? FacebookId { get; set; }
-        public string? ZaloId { get; set; }
+    // Social Login (Bonus)
+    public string? GoogleId { get; set; }
+    public string? FacebookId { get; set; }
+    public string? ZaloId { get; set; }
 
-        public bool IsActive { get; set; } = true;
+    public bool IsActive { get; set; } = true;
 
-        // Navigation
-        public Role Role { get; set; } = null!;
-        public ICollection<PatientProfile> PatientProfiles { get; set; } = new List<PatientProfile>();
-        public ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
-        public ICollection<Order> Orders { get; set; } = new List<Order>();
-    }
+    // Navigation
+    public Role Role { get; set; } = null!;
+    public ICollection<PatientProfile> PatientProfiles { get; set; } = [];
+    public ICollection<CartItem> CartItems { get; set; } = [];
+    public ICollection<Order> Orders { get; set; } = [];
 }
 

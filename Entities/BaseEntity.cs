@@ -1,10 +1,8 @@
 ﻿using System;
 
-namespace MedicalAppointment.API.Entities
+namespace MedicalAppointment.API.Entities;
+public abstract class BaseEntity
 {
-    public abstract class BaseEntity
-    {
-        public DateTime CreatedAt { get; set; }
-        public DateTime? UpdatedAt { get; set; }
-    }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 }

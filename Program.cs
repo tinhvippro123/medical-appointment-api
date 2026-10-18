@@ -1,17 +1,75 @@
-﻿using MedicalAppointment.API.Middlewares;
+﻿using MedicalAppointment.API.Data;
+using MedicalAppointment.API.Middlewares;
+using MedicalAppointment.API.Provider;
+using MedicalAppointment.API.Services;
+using MedicalAppointment.API.Services.Interface;
+using Microsoft.EntityFrameworkCore;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddControllers();
+
+// CORS cho Local Development
+builder.Services.AddCors(options => options.AddPolicy("LocalDevelopment", policy =>
+    policy.SetIsOriginAllowed(origin => Uri.TryCreate(origin, UriKind.Absolute, out var uri)
+        && uri.IsLoopback).AllowAnyHeader().AllowAnyMethod()));
+
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
-builder.Services.AddScoped<MedicalAppointment.API.Services.IPatientProfileService, MedicalAppointment.API.Services.PatientProfileService>();
+
+// --- Dependency Injection ---
+builder.Services.AddScoped<IJwtProvider, JwtProvider>();
+builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IDepartmentService, DepartmentService>();
+builder.Services.AddScoped<IDoctorService, DoctorService>();
+builder.Services.AddScoped<IDoctorScheduleService, DoctorScheduleService>();
+builder.Services.AddScoped<IPatientProfileService, PatientProfileService>();
+builder.Services.AddSingleton<MedicalAppointment.API.Helpers.ImageStorageHelper>();
+
+// Configure EF Core DbContext
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Cấu hình JWT Authentication
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidateAudience = true,
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+    };
+});
 
 var app = builder.Build();
 
 app.UseExceptionHandler();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseCors("LocalDevelopment");
+}
+
+app.UseStaticFiles(); // Phục vụ file ảnh từ wwwroot
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -19,29 +77,18 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-var summaries = new[]
+// Tự động chạy Migration khi khởi động server
+try
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    db.Database.Migrate();
+}
+catch (Exception ex)
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
-
-app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+    app.Logger.LogWarning(ex, "Could not apply migrations automatically.");
 }
 
+app.MapControllers();
+
+app.Run();

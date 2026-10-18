@@ -21,6 +21,7 @@ builder.Services.AddCors(options => options.AddPolicy("LocalDevelopment", policy
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
+builder.Services.AddScoped<MedicalAppointment.API.Services.IDoctorScheduleService, MedicalAppointment.API.Services.DoctorScheduleService>();
 
 // --- Dependency Injection ---
 builder.Services.AddScoped<IJwtProvider, JwtProvider>();

@@ -10,6 +10,7 @@ public interface IDepartmentService
     Task<DepartmentDto> UpdateAsync(int id, UpdateDepartmentDto dto);
     Task DeleteAsync(int id);
     Task<DepartmentDto> UploadImageAsync(int id, IFormFile file);
+    Task<DepartmentDto> SetImageUrlAsync(int id, string imageUrl);
     Task<DepartmentDto> DeleteImageAsync(int id);
 }
 

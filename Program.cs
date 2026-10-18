@@ -9,6 +9,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
+builder.Services.AddCors(options => options.AddPolicy("LocalDevelopment", policy =>
+    policy.SetIsOriginAllowed(origin => Uri.TryCreate(origin, UriKind.Absolute, out var uri)
+        && uri.IsLoopback).AllowAnyHeader().AllowAnyMethod()));
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
@@ -21,6 +24,7 @@ builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 var app = builder.Build();
 
 app.UseExceptionHandler();
+if (app.Environment.IsDevelopment()) app.UseCors("LocalDevelopment");
 app.UseStaticFiles(); // Phục vụ file tĩnh từ wwwroot
 
 // Configure the HTTP request pipeline.

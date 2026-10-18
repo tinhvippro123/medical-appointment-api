@@ -28,7 +28,7 @@ public class DepartmentController(IDepartmentService departmentService) : Contro
 
     // POST /api/departments — Thêm mới 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateDepartmentDto dto)
+    public async Task<IActionResult> Create(CreateDepartmentDto dto)
     {
         var department = await _departmentService.CreateAsync(dto);
         return CreatedAtAction(nameof(GetById), new { id = department.Id }, department);
@@ -36,7 +36,7 @@ public class DepartmentController(IDepartmentService departmentService) : Contro
 
     // PUT /api/departments/{id} — Sửa 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateDepartmentDto dto)
+    public async Task<IActionResult> Update(int id,UpdateDepartmentDto dto)
     {
         var department = await _departmentService.UpdateAsync(id, dto);
         return Ok(department);
@@ -52,9 +52,19 @@ public class DepartmentController(IDepartmentService departmentService) : Contro
 
     // POST /api/departments/{id}/image — Upload ảnh chuyên khoa
     [HttpPost("{id}/image")]
-    public async Task<IActionResult> UploadImage(int id, IFormFile file)
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(6 * 1024 * 1024)]
+    public async Task<IActionResult> UploadImage(int id, [FromForm] IFormFile file)
     {
         var department = await _departmentService.UploadImageAsync(id, file);
+        return Ok(department);
+    }
+
+    // Gallery và camera gửi file vào endpoint trên; URL gửi JSON vào endpoint này.
+    [HttpPost("{id}/image/url")]
+    public async Task<IActionResult> SetImageUrl(int id, [FromBody] DepartmentImageUrlDto dto)
+    {
+        var department = await _departmentService.SetImageUrlAsync(id, dto.ImageUrl);
         return Ok(department);
     }
 

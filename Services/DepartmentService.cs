@@ -143,20 +143,11 @@ public class DepartmentService(ApplicationDbContext context, IWebHostEnvironment
         if (hasDoctors)
             throw new BadRequestException(ErrorCode.DEPARTMENT_HAS_DOCTORS);
 
-        // Xóa file ảnh trên server (nếu có)
-        if (department.ImageUrl != null && department.ImageUrl != "")
-        {
-            var path = department.ImageUrl.TrimStart('/');
-            var filePath = Path.Combine(_env.WebRootPath, path);
-            if (File.Exists(filePath))
-            {
-                File.Delete(filePath);
-            }
-        }
-
+        var oldImageUrl = department.ImageUrl;
         department.IsActive = false;
         department.ImageUrl = null;
         await _context.SaveChangesAsync();
+        DeleteLocalImage(oldImageUrl);
     }
 
     // Upload ảnh mới cho chuyên khoa
@@ -167,46 +158,56 @@ public class DepartmentService(ApplicationDbContext context, IWebHostEnvironment
             throw new NotFoundException(ErrorCode.DEPARTMENT_NOT_FOUND);
 
         // Validate file: chỉ cho phép .jpg, .jpeg, .png và < 5MB
-        var ext = Path.GetExtension(file.FileName).ToLower();
+        if (file == null || file.Length == 0 || file.Length > 5 * 1024 * 1024)
+            throw new BadRequestException(ErrorCode.DEPARTMENT_IMAGE_INVALID);
+
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (ext != ".jpg" && ext != ".jpeg" && ext != ".png")
         {
             throw new BadRequestException(ErrorCode.DEPARTMENT_IMAGE_INVALID);
         }
 
-        if (file.Length > 5 * 1024 * 1024)
+        // Kiểm tra phần đầu file để tránh nhận file văn bản đổi đuôi thành ảnh.
+        var header = new byte[8];
+        using (var input = file.OpenReadStream())
         {
-            throw new BadRequestException(ErrorCode.DEPARTMENT_IMAGE_INVALID);
-        }
-
-        // Nếu đã có ảnh cũ -> xóa file cũ trước
-        if (department.ImageUrl != null && department.ImageUrl != "")
-        {
-            var oldPath = department.ImageUrl.TrimStart('/');
-            var oldFilePath = Path.Combine(_env.WebRootPath, oldPath);
-            if (File.Exists(oldFilePath))
-            {
-                File.Delete(oldFilePath);
-            }
+            var bytesRead = await input.ReadAtLeastAsync(header, 8, throwOnEndOfStream: false);
+            var isJpeg = bytesRead >= 3 && header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF;
+            var isPng = bytesRead == 8 && header[0] == 137 && header[1] == 80
+                && header[2] == 78 && header[3] == 71 && header[4] == 13
+                && header[5] == 10 && header[6] == 26 && header[7] == 10;
+            if ((ext == ".png" && !isPng) || (ext != ".png" && !isJpeg))
+                throw new BadRequestException(ErrorCode.DEPARTMENT_IMAGE_INVALID);
         }
 
         // Lưu file mới vào wwwroot/images/departments/{tên_file}
-        var folder = Path.Combine(_env.WebRootPath, "images", "departments");
+        var folder = GetImageFolder();
         if (!Directory.Exists(folder))
         {
             Directory.CreateDirectory(folder);
         }
 
-        var fileName = DateTime.Now.Ticks.ToString() + ext;
+        var fileName = Guid.NewGuid().ToString("N") + ext;
         var filePath = Path.Combine(folder, fileName);
-
-        using (var stream = new FileStream(filePath, FileMode.Create))
+        var oldImageUrl = department.ImageUrl;
+        try
         {
-            await file.CopyToAsync(stream);
+            using (var stream = new FileStream(filePath, FileMode.CreateNew))
+            {
+                await file.CopyToAsync(stream);
+            }
+            department.ImageUrl = "/images/departments/" + fileName;
+            await _context.SaveChangesAsync();
+        }
+        catch
+        {
+            department.ImageUrl = oldImageUrl;
+            if (File.Exists(filePath)) File.Delete(filePath);
+            throw;
         }
 
-        // Cập nhật ImageUrl trong database
-        department.ImageUrl = "/images/departments/" + fileName;
-        await _context.SaveChangesAsync();
+        // Chỉ xóa ảnh cũ sau khi lưu ảnh mới và database thành công.
+        DeleteLocalImage(oldImageUrl);
 
         return new DepartmentDto
         {
@@ -230,16 +231,10 @@ public class DepartmentService(ApplicationDbContext context, IWebHostEnvironment
         if (department.ImageUrl == null || department.ImageUrl == "")
             throw new BadRequestException(ErrorCode.DEPARTMENT_NO_IMAGE);
 
-        // Xóa file vật lý trên server
-        var path = department.ImageUrl.TrimStart('/');
-        var filePath = Path.Combine(_env.WebRootPath, path);
-        if (File.Exists(filePath))
-        {
-            File.Delete(filePath);
-        }
-
+        var oldImageUrl = department.ImageUrl;
         department.ImageUrl = null;
         await _context.SaveChangesAsync();
+        DeleteLocalImage(oldImageUrl);
 
         return new DepartmentDto
         {
@@ -251,5 +246,46 @@ public class DepartmentService(ApplicationDbContext context, IWebHostEnvironment
             CreatedAt = department.CreatedAt,
             UpdatedAt = department.UpdatedAt
         };
+    }
+    // Chỉ lưu URL, không tải ảnh từ website khác về server.
+    public async Task<DepartmentDto> SetImageUrlAsync(int id, string imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl))
+            throw new BadRequestException(ErrorCode.DEPARTMENT_IMAGE_URL_INVALID);
+
+        imageUrl = imageUrl.Trim();
+        if (!Uri.TryCreate(imageUrl, UriKind.Absolute, out var uri)
+            || (uri.Scheme != "http" && uri.Scheme != "https")
+            || string.IsNullOrEmpty(uri.Host) || !string.IsNullOrEmpty(uri.UserInfo))
+            throw new BadRequestException(ErrorCode.DEPARTMENT_IMAGE_URL_INVALID);
+
+        var department = await _context.Departments.FindAsync(id);
+        if (department == null || !department.IsActive)
+            throw new NotFoundException(ErrorCode.DEPARTMENT_NOT_FOUND);
+
+        var oldImageUrl = department.ImageUrl;
+        department.ImageUrl = imageUrl;
+        await _context.SaveChangesAsync();
+        DeleteLocalImage(oldImageUrl);
+        return await GetByIdAsync(id);
+    }
+
+    private string GetImageFolder()
+    {
+        var webRoot = _env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot");
+        return Path.Combine(webRoot, "images", "departments");
+    }
+
+    private void DeleteLocalImage(string? imageUrl)
+    {
+        const string prefix = "/images/departments/";
+        // URL bên ngoài không phải file trên server. Chỉ xóa file trực tiếp trong thư mục ảnh.
+        if (imageUrl == null || !imageUrl.StartsWith(prefix, StringComparison.Ordinal)) return;
+        var fileName = imageUrl[prefix.Length..];
+        if (string.IsNullOrEmpty(fileName) || fileName.Contains('/') || fileName.Contains('\\')
+            || fileName.Contains(':') || fileName == "." || fileName == "..") return;
+
+        var filePath = Path.Combine(GetImageFolder(), fileName);
+        if (File.Exists(filePath)) File.Delete(filePath);
     }
 }

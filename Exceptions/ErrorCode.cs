@@ -24,4 +24,9 @@ public class ErrorCode(string code, string message)
         public static readonly ErrorCode WRONG_OLD_PASSWORD = new("WRONG_OLD_PASSWORD", "Mật khẩu cũ không chính xác!");
         public static readonly ErrorCode SAME_OLD_PASSWORD = new("SAME_OLD_PASSWORD", "Mật khẩu mới không được trùng với mật khẩu cũ!");
 
+        // --- CART ---
+        public static readonly ErrorCode INVALID_PATIENT_PROFILE = new("INVALID_PATIENT_PROFILE", "Hồ sơ bệnh nhân không hợp lệ!");
+        public static readonly ErrorCode CART_ITEM_DUPLICATE = new("CART_ITEM_DUPLICATE", "Lịch hẹn này đã có trong giỏ hàng!");
+        public static readonly ErrorCode INVALID_TIME_SLOT = new("INVALID_TIME_SLOT", "Khung giờ không nằm trong lịch làm việc của bác sĩ!");
+
 }

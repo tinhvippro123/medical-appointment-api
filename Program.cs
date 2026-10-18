@@ -18,6 +18,7 @@ builder.Services.AddProblemDetails();
 builder.Services.AddScoped<IJwtProvider, JwtProvider>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<MedicalAppointment.API.Services.ICartService, MedicalAppointment.API.Services.CartService>();
 builder.Services.AddControllers();
 // Cấu hình JWT Authentication
 builder.Services.AddAuthentication(options =>

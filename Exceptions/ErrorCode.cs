@@ -33,6 +33,11 @@ public class ErrorCode(string code, string message)
     // --- PATIENT PROFILE ---
     public static readonly ErrorCode PROFILE_IN_USE = new("PROFILE_IN_USE", "Hồ sơ đang được sử dụng trong giỏ hàng hoặc đơn hàng, không thể xóa!");
 
+    // --- CART ---
+    public static readonly ErrorCode INVALID_PATIENT_PROFILE = new("INVALID_PATIENT_PROFILE", "Hồ sơ bệnh nhân không hợp lệ!");
+    public static readonly ErrorCode CART_ITEM_DUPLICATE = new("CART_ITEM_DUPLICATE", "Lịch hẹn này đã có trong giỏ hàng!");
+    public static readonly ErrorCode INVALID_TIME_SLOT = new("INVALID_TIME_SLOT", "Khung giờ không nằm trong lịch làm việc của bác sĩ!");
+
     // --- BOOKING ---
     public static readonly ErrorCode TIME_SLOT_FULL = new("TIME_SLOT_FULL", "Khung giờ này đã đầy, vui lòng chọn giờ khác!");
 

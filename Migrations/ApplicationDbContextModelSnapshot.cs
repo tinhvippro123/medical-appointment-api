@@ -510,7 +510,6 @@ namespace MedicalAppointment.API.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
@@ -530,12 +529,14 @@ namespace MedicalAppointment.API.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(true);
 
-                    b.Property<string>("PasswordHash")
+                    b.Property<string>("Password")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Phone")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<int>("RoleId")
                         .HasColumnType("int");
@@ -549,6 +550,10 @@ namespace MedicalAppointment.API.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
+                        .IsUnique()
+                        .HasFilter("[Email] IS NOT NULL");
+
+                    b.HasIndex("Phone")
                         .IsUnique();
 
                     b.HasIndex("RoleId");

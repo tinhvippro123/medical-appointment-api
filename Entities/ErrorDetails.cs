@@ -4,6 +4,10 @@ namespace MedicalAppointment.API.Entities;
 
 public class ErrorDetails
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
     public int StatusCode { get; set; }
 
     public string ErrorCode { get; set; } = string.Empty;
@@ -12,10 +16,7 @@ public class ErrorDetails
 
     public override string ToString()
     {
-        return JsonSerializer.Serialize(this, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
+        return JsonSerializer.Serialize(this, JsonOptions);
     }
 
 }

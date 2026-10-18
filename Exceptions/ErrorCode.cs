@@ -30,6 +30,9 @@ public class ErrorCode(string code, string message)
     public static readonly ErrorCode ROOM_NOT_FOUND = new("ROOM_NOT_FOUND", "Không tìm thấy phòng khám!");
     public static readonly ErrorCode ROOM_NOT_IN_DEPARTMENT = new("ROOM_NOT_IN_DEPARTMENT", "Phòng khám không thuộc chuyên khoa đã chọn!");
 
+    // --- PATIENT PROFILE ---
+    public static readonly ErrorCode PROFILE_IN_USE = new("PROFILE_IN_USE", "Hồ sơ đang được sử dụng trong giỏ hàng hoặc đơn hàng, không thể xóa!");
+
     // --- BOOKING ---
     public static readonly ErrorCode TIME_SLOT_FULL = new("TIME_SLOT_FULL", "Khung giờ này đã đầy, vui lòng chọn giờ khác!");
 

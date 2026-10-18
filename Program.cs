@@ -21,7 +21,6 @@ builder.Services.AddCors(options => options.AddPolicy("LocalDevelopment", policy
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
-builder.Services.AddScoped<MedicalAppointment.API.Services.IDoctorScheduleService, MedicalAppointment.API.Services.DoctorScheduleService>();
 
 // --- Dependency Injection ---
 builder.Services.AddScoped<IJwtProvider, JwtProvider>();
@@ -29,6 +28,8 @@ builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 builder.Services.AddScoped<IDoctorService, DoctorService>();
+builder.Services.AddScoped<IDoctorScheduleService, DoctorScheduleService>();
+builder.Services.AddScoped<IPatientProfileService, PatientProfileService>();
 builder.Services.AddSingleton<MedicalAppointment.API.Helpers.ImageStorageHelper>();
 
 // Configure EF Core DbContext
@@ -77,10 +78,15 @@ if (app.Environment.IsDevelopment())
 }
 
 // Tự động chạy Migration khi khởi động server
-using (var scope = app.Services.CreateScope())
+try
 {
+    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     db.Database.Migrate();
+}
+catch (Exception ex)
+{
+    app.Logger.LogWarning(ex, "Could not apply migrations automatically.");
 }
 
 app.MapControllers();

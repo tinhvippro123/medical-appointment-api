@@ -27,6 +27,8 @@ builder.Services.AddScoped<IJwtProvider, JwtProvider>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
+builder.Services.AddScoped<IDoctorService, DoctorService>();
+builder.Services.AddSingleton<MedicalAppointment.API.Helpers.ImageStorageHelper>();
 
 // Configure EF Core DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>

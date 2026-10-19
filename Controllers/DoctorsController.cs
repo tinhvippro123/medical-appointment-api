@@ -35,6 +35,18 @@ public class DoctorsController(IDoctorService doctorService) : ControllerBase
     }
 
     /// <summary>
+    /// GET /api/doctors/{id}/related?page=1&amp;pageSize=5
+    /// Danh sách bác sĩ cùng chuyên khoa (cùng DepartmentId, Id != id, IsActive = true). Public.
+    /// Bác sĩ gốc không tồn tại hoặc IsActive = false → 404 DOCTOR_NOT_FOUND.
+    /// </summary>
+    [HttpGet("{id:int}/related")]
+    public async Task<IActionResult> GetRelated(int id, [FromQuery] RelatedDoctorQueryParameters query)
+    {
+        var result = await _doctorService.GetRelatedAsync(id, query);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// POST /api/doctors
     /// Tạo bác sĩ mới. ADMIN only. Dùng multipart/form-data ([FromForm]).
     /// </summary>

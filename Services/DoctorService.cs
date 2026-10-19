@@ -46,20 +46,108 @@ public class DoctorService : IDoctorService
         };
     }
 
-    public async Task<DoctorResponse> GetByIdAsync(int id)
+    public async Task<DoctorDetailResponse> GetByIdAsync(int id)
     {
         var doctor = await _context.Doctors
-            .Include(d => d.Department)
-            .Include(d => d.Room)
             .AsNoTracking()
-            .FirstOrDefaultAsync(d => d.Id == id);
+            .Where(d => d.Id == id && d.IsActive)
+            .Select(d => new DoctorDetailResponse
+            {
+                Id = d.Id,
+                FullName = d.FullName,
+                Qualification = d.Qualification,
+                Email = d.Email,
+                Phone = d.Phone,
+                DepartmentId = d.DepartmentId,
+                DepartmentName = d.Department.Name,
+                RoomId = d.RoomId,
+                RoomNumber = d.Room != null ? d.Room.RoomNumber : null,
+                Floor = d.Room != null ? d.Room.Floor : null,
+                Description = d.Description,
+                AvatarUrl = d.AvatarUrl,
+                ExperienceYears = d.ExperienceYears,
+                ConsultationFee = d.ConsultationFee,
+                IsActive = d.IsActive,
+                CreatedAt = d.CreatedAt,
+                UpdatedAt = d.UpdatedAt,
+                Schedules = d.Schedules
+                    .OrderBy(s => s.DayOfWeek)
+                    .ThenBy(s => s.StartTime)
+                    .Select(s => new DoctorScheduleItemResponse
+                    {
+                        Id = s.Id,
+                        DayOfWeek = s.DayOfWeek,
+                        StartTime = s.StartTime,
+                        EndTime = s.EndTime,
+                        MaxPatients = s.MaxPatients
+                    })
+                    .ToList()
+            })
+            .FirstOrDefaultAsync();
 
-        if (doctor == null || !doctor.IsActive)
+        if (doctor == null)
         {
             throw new NotFoundException(ErrorCode.DOCTOR_NOT_FOUND);
         }
 
-        return MapToResponse(doctor);
+        return doctor;
+    }
+
+    public async Task<PagedResult<DoctorResponse>> GetRelatedAsync(int id, RelatedDoctorQueryParameters query)
+    {
+        // Kiểm tra bác sĩ gốc tồn tại và còn hoạt động, chỉ lấy DepartmentId và IsActive (không tải cả entity)
+        var baseDoctorInfo = await _context.Doctors
+            .AsNoTracking()
+            .Where(d => d.Id == id)
+            .Select(d => new { d.DepartmentId, d.IsActive })
+            .FirstOrDefaultAsync();
+
+        if (baseDoctorInfo == null || !baseDoctorInfo.IsActive)
+        {
+            throw new NotFoundException(ErrorCode.DOCTOR_NOT_FOUND);
+        }
+
+        var relatedQuery = _context.Doctors
+            .AsNoTracking()
+            .Where(d => d.DepartmentId == baseDoctorInfo.DepartmentId && d.Id != id && d.IsActive);
+
+        // Đếm tổng số lượng trước khi phân trang
+        var totalCount = await relatedQuery.CountAsync();
+
+        // Sắp xếp theo Id rồi phân trang và chiếu sang DoctorResponse
+        var items = await relatedQuery
+            .OrderBy(d => d.Id)
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize)
+            .Select(d => new DoctorResponse
+            {
+                Id = d.Id,
+                FullName = d.FullName,
+                Qualification = d.Qualification,
+                Email = d.Email,
+                Phone = d.Phone,
+                DepartmentId = d.DepartmentId,
+                DepartmentName = d.Department.Name,
+                RoomId = d.RoomId,
+                RoomNumber = d.Room != null ? d.Room.RoomNumber : null,
+                Floor = d.Room != null ? d.Room.Floor : null,
+                Description = d.Description,
+                AvatarUrl = d.AvatarUrl,
+                ExperienceYears = d.ExperienceYears,
+                ConsultationFee = d.ConsultationFee,
+                IsActive = d.IsActive,
+                CreatedAt = d.CreatedAt,
+                UpdatedAt = d.UpdatedAt
+            })
+            .ToListAsync();
+
+        return new PagedResult<DoctorResponse>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = query.Page,
+            PageSize = query.PageSize
+        };
     }
 
     public async Task<DoctorResponse> CreateAsync(CreateDoctorRequest request)

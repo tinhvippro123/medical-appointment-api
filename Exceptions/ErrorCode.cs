@@ -1,4 +1,4 @@
-﻿namespace MedicalAppointment.API.Exceptions;
+namespace MedicalAppointment.API.Exceptions;
 
 public class ErrorCode(string code, string message)
 {
@@ -40,6 +40,10 @@ public class ErrorCode(string code, string message)
 
     // --- BOOKING ---
     public static readonly ErrorCode TIME_SLOT_FULL = new("TIME_SLOT_FULL", "Khung giờ này đã đầy, vui lòng chọn giờ khác!");
+
+    // --- ORDER ---
+    public static readonly ErrorCode ORDER_NOT_FOUND = new("ORDER_NOT_FOUND", "Không tìm thấy đơn đặt lịch!");
+    public static readonly ErrorCode INVALID_ORDER_STATUS_TRANSITION = new("INVALID_ORDER_STATUS_TRANSITION", "Chuyển trạng thái đơn hàng không hợp lệ!");
 
     // --- GENERAL ---
     public static readonly ErrorCode RESOURCE_NOT_FOUND = new("RESOURCE_NOT_FOUND", "Không tìm thấy tài nguyên yêu cầu!");

@@ -1,4 +1,4 @@
-﻿namespace MedicalAppointment.API.Exceptions;
+namespace MedicalAppointment.API.Exceptions;
 
 public class ErrorCode(string code, string message)
 {
@@ -46,4 +46,13 @@ public class ErrorCode(string code, string message)
     public static readonly ErrorCode UNAUTHORIZED = new("UNAUTHORIZED", "Vui lòng đăng nhập để tiếp tục!");
     public static readonly ErrorCode FORBIDDEN = new("FORBIDDEN", "Bạn không có quyền thực hiện hành động này!");
     public static readonly ErrorCode INTERNAL_SERVER_ERROR = new("INTERNAL_SERVER_ERROR", "Đã xảy ra lỗi hệ thống nghiêm trọng!");
+
+    // --- USER & ROLE MANAGEMENT ---
+    public static readonly ErrorCode EMAIL_ALREADY_EXISTS = new("EMAIL_ALREADY_EXISTS", "Email này đã được sử dụng!");
+    public static readonly ErrorCode CANNOT_DISABLE_SELF = new("CANNOT_DISABLE_SELF", "Bạn không thể tự khóa hoặc xóa tài khoản của chính mình!");
+    public static readonly ErrorCode CANNOT_CHANGE_OWN_ROLE = new("CANNOT_CHANGE_OWN_ROLE", "Bạn không thể tự thay đổi vai trò của chính mình!");
+    public static readonly ErrorCode ROLE_NOT_FOUND = new("ROLE_NOT_FOUND", "Không tìm thấy vai trò!");
+    public static readonly ErrorCode ROLE_KEY_ALREADY_EXISTS = new("ROLE_KEY_ALREADY_EXISTS", "Mã vai trò này đã tồn tại!");
+    public static readonly ErrorCode ROLE_IN_USE = new("ROLE_IN_USE", "Vai trò này đang được gán cho người dùng, không thể xóa!");
+    public static readonly ErrorCode SYSTEM_ROLE_PROTECTED = new("SYSTEM_ROLE_PROTECTED", "Không thể xóa hoặc thay đổi mã của vai trò mặc định!");
 }

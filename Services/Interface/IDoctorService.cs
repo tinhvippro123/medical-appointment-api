@@ -1,7 +1,7 @@
 using MedicalAppointment.API.DTOs.Common;
 using MedicalAppointment.API.DTOs.Doctor;
 
-namespace MedicalAppointment.API.Services;
+namespace MedicalAppointment.API.Services.Interface;
 
 public interface IDoctorService
 {

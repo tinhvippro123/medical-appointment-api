@@ -1,5 +1,5 @@
 using MedicalAppointment.API.DTOs.DoctorSchedule;
-using MedicalAppointment.API.Services;
+using MedicalAppointment.API.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

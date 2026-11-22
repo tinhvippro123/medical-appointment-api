@@ -2,6 +2,7 @@ using MedicalAppointment.API.Data;
 using MedicalAppointment.API.DTOs.Cart;
 using MedicalAppointment.API.Entities;
 using MedicalAppointment.API.Exceptions;
+using MedicalAppointment.API.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 
 namespace MedicalAppointment.API.Services;

@@ -23,6 +23,18 @@ public class DoctorsController(IDoctorService doctorService) : ControllerBase
     }
 
     /// <summary>
+    /// GET /api/doctors/search?keyword=Nguyễn&amp;departmentId=1&amp;page=1&amp;pageSize=10
+    /// Tìm kiếm bác sĩ đang hoạt động theo tên và chuyên khoa, phân trang. Public.
+    /// Route "search" là chuỗi tĩnh nên không xung đột với "{id:int}".
+    /// </summary>
+    [HttpGet("search")]
+    public async Task<IActionResult> Search([FromQuery] DoctorSearchQueryParameters query)
+    {
+        var result = await _doctorService.SearchAsync(query);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// GET /api/doctors/{id}
     /// Chi tiết 1 bác sĩ (IsActive = false → 404). Public.
     /// Dùng ràng buộc kiểu {id:int} để tránh xung đột với route "search".

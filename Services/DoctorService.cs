@@ -4,6 +4,7 @@ using MedicalAppointment.API.DTOs.Doctor;
 using MedicalAppointment.API.Entities;
 using MedicalAppointment.API.Exceptions;
 using MedicalAppointment.API.Helpers;
+using MedicalAppointment.API.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 
 namespace MedicalAppointment.API.Services;
@@ -116,6 +117,64 @@ public class DoctorService : IDoctorService
 
         // Sắp xếp theo Id rồi phân trang và chiếu sang DoctorResponse
         var items = await relatedQuery
+            .OrderBy(d => d.Id)
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize)
+            .Select(d => new DoctorResponse
+            {
+                Id = d.Id,
+                FullName = d.FullName,
+                Qualification = d.Qualification,
+                Email = d.Email,
+                Phone = d.Phone,
+                DepartmentId = d.DepartmentId,
+                DepartmentName = d.Department.Name,
+                RoomId = d.RoomId,
+                RoomNumber = d.Room != null ? d.Room.RoomNumber : null,
+                Floor = d.Room != null ? d.Room.Floor : null,
+                Description = d.Description,
+                AvatarUrl = d.AvatarUrl,
+                ExperienceYears = d.ExperienceYears,
+                ConsultationFee = d.ConsultationFee,
+                IsActive = d.IsActive,
+                CreatedAt = d.CreatedAt,
+                UpdatedAt = d.UpdatedAt
+            })
+            .ToListAsync();
+
+        return new PagedResult<DoctorResponse>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = query.Page,
+            PageSize = query.PageSize
+        };
+    }
+
+    public async Task<PagedResult<DoctorResponse>> SearchAsync(DoctorSearchQueryParameters query)
+    {
+        var baseQuery = _context.Doctors
+            .AsNoTracking()
+            .Where(d => d.IsActive);
+
+        // Lọc theo keyword nếu có (đã Trim, bỏ qua nếu null hoặc chỉ có khoảng trắng)
+        if (!string.IsNullOrWhiteSpace(query.Keyword))
+        {
+            var trimmedKeyword = query.Keyword.Trim();
+            baseQuery = baseQuery.Where(d => d.FullName.Contains(trimmedKeyword));
+        }
+
+        // Lọc theo DepartmentId nếu có
+        if (query.DepartmentId.HasValue)
+        {
+            baseQuery = baseQuery.Where(d => d.DepartmentId == query.DepartmentId.Value);
+        }
+
+        // Đếm tổng số lượng thỏa mãn điều kiện trước khi phân trang
+        var totalCount = await baseQuery.CountAsync();
+
+        // Sắp xếp theo Id tăng dần, phân trang Skip/Take và chiếu sang DoctorResponse (1 truy vấn, không N+1)
+        var items = await baseQuery
             .OrderBy(d => d.Id)
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize)

@@ -1,4 +1,4 @@
-﻿using MedicalAppointment.API.Data;
+using MedicalAppointment.API.Data;
 using MedicalAppointment.API.Middlewares;
 using MedicalAppointment.API.Provider;
 using MedicalAppointment.API.Services;
@@ -26,12 +26,15 @@ builder.Services.AddProblemDetails();
 builder.Services.AddScoped<IJwtProvider, JwtProvider>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 builder.Services.AddScoped<IDoctorService, DoctorService>();
 builder.Services.AddScoped<IDoctorScheduleService, DoctorScheduleService>();
 builder.Services.AddScoped<IPatientProfileService, PatientProfileService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IRoomService, RoomService>();
+builder.Services.AddScoped<IAdminOrderService, AdminOrderService>();
 builder.Services.AddSingleton<MedicalAppointment.API.Helpers.ImageStorageHelper>();
 
 // Configure EF Core DbContext

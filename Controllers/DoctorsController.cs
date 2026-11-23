@@ -1,5 +1,5 @@
 using MedicalAppointment.API.DTOs.Doctor;
-using MedicalAppointment.API.Services;
+using MedicalAppointment.API.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,6 +19,18 @@ public class DoctorsController(IDoctorService doctorService) : ControllerBase
     public async Task<IActionResult> GetAll([FromQuery] DoctorQueryParameters query)
     {
         var result = await _doctorService.GetAllAsync(query);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// GET /api/doctors/search?keyword=Nguyễn&amp;departmentId=1&amp;page=1&amp;pageSize=10
+    /// Tìm kiếm bác sĩ đang hoạt động theo tên và chuyên khoa, phân trang. Public.
+    /// Route "search" là chuỗi tĩnh nên không xung đột với "{id:int}".
+    /// </summary>
+    [HttpGet("search")]
+    public async Task<IActionResult> Search([FromQuery] DoctorSearchQueryParameters query)
+    {
+        var result = await _doctorService.SearchAsync(query);
         return Ok(result);
     }
 

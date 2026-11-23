@@ -26,15 +26,22 @@ public class DoctorService : IDoctorService
             .Where(d => d.IsActive)
             .Include(d => d.Department)
             .Include(d => d.Room)
-            .OrderBy(d => d.Id)
+            .OrderByDescending(d => d.CreatedAt)
+            .ThenByDescending(d => d.Id)
             .AsNoTracking();
 
         var totalCount = await baseQuery.CountAsync();
 
-        var doctorEntities = await baseQuery
-            .Skip((query.Page - 1) * query.PageSize)
-            .Take(query.PageSize)
-            .ToListAsync();
+        // Tính bằng long để trang rất lớn không làm tràn số.
+        long skip = ((long)query.Page - 1) * query.PageSize;
+        var doctorEntities = new List<Doctor>();
+        if (skip < totalCount)
+        {
+            doctorEntities = await baseQuery
+                .Skip((int)skip)
+                .Take(query.PageSize)
+                .ToListAsync();
+        }
 
         var doctors = doctorEntities.Select(MapToResponse).ToList();
 

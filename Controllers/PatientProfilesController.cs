@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using MedicalAppointment.API.DTOs.PatientProfile;
-using MedicalAppointment.API.Services;
+using MedicalAppointment.API.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

@@ -1,6 +1,6 @@
 using MedicalAppointment.API.DTOs.PatientProfile;
 
-namespace MedicalAppointment.API.Services;
+namespace MedicalAppointment.API.Services.Interface;
 
 public interface IPatientProfileService
 {

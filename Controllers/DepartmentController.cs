@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using MedicalAppointment.API.DTOs.Department;
-using MedicalAppointment.API.Services;
+using MedicalAppointment.API.Services.Interface;
 
 namespace MedicalAppointment.API.Controllers;
 

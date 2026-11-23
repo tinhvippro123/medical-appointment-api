@@ -4,6 +4,7 @@ using MedicalAppointment.API.DTOs.Doctor;
 using MedicalAppointment.API.Entities;
 using MedicalAppointment.API.Exceptions;
 using MedicalAppointment.API.Helpers;
+using MedicalAppointment.API.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 
 namespace MedicalAppointment.API.Services;

@@ -34,6 +34,7 @@ builder.Services.AddScoped<IDoctorScheduleService, DoctorScheduleService>();
 builder.Services.AddScoped<IPatientProfileService, PatientProfileService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IAdminOrderService, AdminOrderService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddSingleton<MedicalAppointment.API.Helpers.ImageStorageHelper>();
 
 // Configure EF Core DbContext

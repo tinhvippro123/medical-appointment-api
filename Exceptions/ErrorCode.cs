@@ -45,6 +45,14 @@ public class ErrorCode(string code, string message)
     public static readonly ErrorCode ORDER_NOT_FOUND = new("ORDER_NOT_FOUND", "Không tìm thấy đơn đặt lịch!");
     public static readonly ErrorCode INVALID_ORDER_STATUS_TRANSITION = new("INVALID_ORDER_STATUS_TRANSITION", "Chuyển trạng thái đơn hàng không hợp lệ!");
 
+    // --- CHECKOUT & ORDER ---
+    public static readonly ErrorCode CART_EMPTY = new("CART_EMPTY", "Giỏ hàng của bạn đang trống!");
+    public static readonly ErrorCode DOCTOR_ON_LEAVE = new("DOCTOR_ON_LEAVE", "Bác sĩ nghỉ khám vào ngày này!");
+    public static readonly ErrorCode APPOINTMENT_TIME_PASSED = new("APPOINTMENT_TIME_PASSED", "Giờ khám đã trôi qua, vui lòng chọn khung giờ khác!");
+    public static readonly ErrorCode PATIENT_SCHEDULE_CONFLICT = new("PATIENT_SCHEDULE_CONFLICT", "Bệnh nhân đã có lịch khám trong khung giờ này!");
+    public static readonly ErrorCode CHECKOUT_CONFLICT = new("CHECKOUT_CONFLICT", "Giỏ hàng vừa thay đổi hoặc hệ thống đang bận, vui lòng thử lại!");
+    public static readonly ErrorCode DOCTOR_UNAVAILABLE = new("DOCTOR_UNAVAILABLE", "Bác sĩ hiện không nhận lịch khám!");
+
     // --- GENERAL ---
     public static readonly ErrorCode RESOURCE_NOT_FOUND = new("RESOURCE_NOT_FOUND", "Không tìm thấy tài nguyên yêu cầu!");
     public static readonly ErrorCode UNAUTHORIZED = new("UNAUTHORIZED", "Vui lòng đăng nhập để tiếp tục!");

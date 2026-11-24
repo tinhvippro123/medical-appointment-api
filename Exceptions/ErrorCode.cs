@@ -30,6 +30,13 @@ public class ErrorCode(string code, string message)
     public static readonly ErrorCode ROOM_NOT_FOUND = new("ROOM_NOT_FOUND", "Không tìm thấy phòng khám!");
     public static readonly ErrorCode ROOM_NOT_IN_DEPARTMENT = new("ROOM_NOT_IN_DEPARTMENT", "Phòng khám không thuộc chuyên khoa đã chọn!");
 
+    // --- DOCTOR DAY-OFF ---
+    public static readonly ErrorCode DAY_OFF_ALREADY_EXISTS = new("DAY_OFF_ALREADY_EXISTS", "Bác sĩ đã đăng ký nghỉ vào ngày này!");
+    public static readonly ErrorCode DAY_OFF_IN_PAST = new("DAY_OFF_IN_PAST", "Không thể đăng ký ngày nghỉ trong quá khứ!");
+    public static readonly ErrorCode DAY_OFF_NOT_FOUND = new("DAY_OFF_NOT_FOUND", "Không tìm thấy ngày nghỉ của bác sĩ!");
+    public static ErrorCode DoctorDayOffHasOrders(int count) =>
+        new("DOCTOR_DAY_OFF_HAS_ORDERS", $"Bác sĩ đã có {count} đơn đặt lịch vào ngày này, không thể đăng ký ngày nghỉ!");
+
     // --- PATIENT PROFILE ---
     public static readonly ErrorCode PROFILE_IN_USE = new("PROFILE_IN_USE", "Hồ sơ đang được sử dụng trong giỏ hàng hoặc đơn hàng, không thể xóa!");
 

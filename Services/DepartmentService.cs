@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using MedicalAppointment.API.Data;
+using MedicalAppointment.API.DTOs.Common;
 using MedicalAppointment.API.DTOs.Department;
+using MedicalAppointment.API.DTOs.Doctor;
 using MedicalAppointment.API.Entities;
 using MedicalAppointment.API.Exceptions;
 using MedicalAppointment.API.Services.Interface;
@@ -52,6 +54,66 @@ public class DepartmentService(ApplicationDbContext context, IWebHostEnvironment
             IsActive = d.IsActive,
             CreatedAt = d.CreatedAt,
             UpdatedAt = d.UpdatedAt
+        };
+    }
+
+    // Lấy danh sách bác sĩ theo chuyên khoa (chỉ IsActive = true, có phân trang)
+    public async Task<PagedResult<DoctorResponse>> GetDoctorsAsync(int departmentId, int page, int pageSize)
+    {
+        var department = await _context.Departments.FindAsync(departmentId);
+        if (department == null || !department.IsActive)
+        {
+            throw new NotFoundException(ErrorCode.DEPARTMENT_NOT_FOUND);
+        }
+
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 10;
+
+        var query = _context.Doctors
+            .Where(d => d.DepartmentId == departmentId && d.IsActive)
+            .Include(d => d.Department)
+            .Include(d => d.Room)
+            .OrderByDescending(d => d.CreatedAt);
+
+        var totalCount = await query.CountAsync();
+
+        var doctors = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        var items = new List<DoctorResponse>();
+        foreach (var d in doctors)
+        {
+            var item = new DoctorResponse
+            {
+                Id = d.Id,
+                FullName = d.FullName,
+                Qualification = d.Qualification,
+                Email = d.Email,
+                Phone = d.Phone,
+                DepartmentId = d.DepartmentId,
+                DepartmentName = d.Department != null ? d.Department.Name : "",
+                RoomId = d.RoomId,
+                RoomNumber = d.Room != null ? d.Room.RoomNumber : null,
+                Floor = d.Room != null ? d.Room.Floor : null,
+                Description = d.Description,
+                AvatarUrl = d.AvatarUrl,
+                ExperienceYears = d.ExperienceYears,
+                ConsultationFee = d.ConsultationFee,
+                IsActive = d.IsActive,
+                CreatedAt = d.CreatedAt,
+                UpdatedAt = d.UpdatedAt
+            };
+            items.Add(item);
+        }
+
+        return new PagedResult<DoctorResponse>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
         };
     }
 

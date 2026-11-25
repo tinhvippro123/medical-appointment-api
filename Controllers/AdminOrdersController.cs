@@ -14,7 +14,8 @@ public class AdminOrdersController(IAdminOrderService adminOrderService) : Contr
 
     /// <summary>
     /// GET /api/admin/orders
-    /// Danh sách tất cả đơn đặt lịch, sắp xếp CreatedAt DESC, phân trang  PagedResult&lt;T&gt;, lọc tùy chọn theo Status.
+    /// Danh sách tất cả đơn đặt lịch, sắp xếp CreatedAt DESC, phân trang PagedResult&lt;T&gt;,
+    /// lọc tùy chọn theo Status, Keyword (tên/SĐT/mã đơn) và khoảng ngày FromDate - ToDate.
     /// ADMIN only.
     /// </summary>
     [HttpGet]

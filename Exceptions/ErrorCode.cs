@@ -51,6 +51,7 @@ public class ErrorCode(string code, string message)
     // --- ORDER ---
     public static readonly ErrorCode ORDER_NOT_FOUND = new("ORDER_NOT_FOUND", "Không tìm thấy đơn đặt lịch!");
     public static readonly ErrorCode INVALID_ORDER_STATUS_TRANSITION = new("INVALID_ORDER_STATUS_TRANSITION", "Chuyển trạng thái đơn hàng không hợp lệ!");
+    public static readonly ErrorCode INVALID_DATE_RANGE = new("INVALID_DATE_RANGE", "Ngày bắt đầu không được lớn hơn ngày kết thúc!");
 
     // --- CHECKOUT & ORDER ---
     public static readonly ErrorCode CART_EMPTY = new("CART_EMPTY", "Giỏ hàng của bạn đang trống!");

@@ -88,4 +88,46 @@ public class AuthController(IAuthService authService) : ControllerBase
 
         return Ok(new { message = "Đã gửi lại mã OTP xác thực tới email của bạn." });
     }
+
+    [Authorize]
+    [HttpPost("verify-password")]
+    public async Task<IActionResult> VerifyPassword(VerifyPasswordRequest request)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        await authService.VerifyCurrentPassword(userId, request.Password);
+        return Ok(new { verified = true });
+    }
+
+    [Authorize]
+    [HttpGet("me")]
+    public async Task<IActionResult> GetMe()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var profile = await authService.GetMyProfile(userId);
+        return Ok(profile);
+    }
+
+    [Authorize]
+    [HttpPut("me")]
+    public async Task<IActionResult> UpdateMe(UpdateMyProfileRequest request)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var result = await authService.UpdateMyProfile(userId, request);
+        return Ok(result);
+    }
 }

@@ -267,4 +267,109 @@ public class AuthService(
 
         return !sentViaSmtp && hostEnvironment.IsDevelopment() ? otp : null;
     }
+
+    public async Task VerifyCurrentPassword(int userId, string password)
+    {
+        var user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId)
+            ?? throw new NotFoundException(ErrorCode.USER_NOT_FOUND);
+
+        if (!passwordHasher.Verifty(password, user.Password))
+        {
+            throw new BadRequestException(ErrorCode.WRONG_OLD_PASSWORD);
+        }
+    }
+
+    public async Task<MyProfileResponse> GetMyProfile(int userId)
+    {
+        var user = await context.Users
+            .AsNoTracking()
+            .Include(u => u.Role)
+            .FirstOrDefaultAsync(u => u.Id == userId)
+            ?? throw new NotFoundException(ErrorCode.USER_NOT_FOUND);
+
+        var selfProfile = await context.PatientProfiles
+            .AsNoTracking()
+            .Where(p => p.UserId == userId)
+            .OrderByDescending(p => p.Relationship == "Bản thân")
+            .ThenBy(p => p.Id)
+            .FirstOrDefaultAsync();
+
+        return new MyProfileResponse
+        {
+            Id = user.Id,
+            FullName = user.FullName,
+            Phone = user.Phone,
+            Email = user.Email,
+            RoleKey = user.Role?.Key ?? "PATIENT",
+            RoleName = user.Role?.Name ?? "Bệnh nhân",
+            DateOfBirth = selfProfile != null ? DateOnly.FromDateTime(selfProfile.DateOfBirth) : null,
+            Gender = selfProfile?.Gender
+        };
+    }
+
+    public async Task<UpdateMyProfileResponse> UpdateMyProfile(int userId, UpdateMyProfileRequest request)
+    {
+        var user = await context.Users
+            .Include(u => u.Role)
+            .FirstOrDefaultAsync(u => u.Id == userId)
+            ?? throw new NotFoundException(ErrorCode.USER_NOT_FOUND);
+
+        var normalizedEmail = string.IsNullOrWhiteSpace(request.Email)
+            ? null
+            : request.Email.Trim().ToLowerInvariant();
+
+        if (normalizedEmail != null)
+        {
+            var emailTaken = await context.Users.AnyAsync(
+                u => u.Id != userId && u.Email != null && u.Email.ToLower() == normalizedEmail);
+            if (emailTaken)
+            {
+                throw new BadRequestException(ErrorCode.EMAIL_ALREADY_EXISTS);
+            }
+        }
+
+        user.FullName = request.FullName.Trim();
+        user.Email = normalizedEmail;
+
+        var selfProfile = await context.PatientProfiles
+            .Where(p => p.UserId == userId && p.Relationship == "Bản thân")
+            .FirstOrDefaultAsync();
+
+        if (selfProfile != null)
+        {
+            selfProfile.FullName = user.FullName;
+            if (request.DateOfBirth.HasValue)
+            {
+                selfProfile.DateOfBirth = request.DateOfBirth.Value.ToDateTime(TimeOnly.MinValue);
+            }
+            if (!string.IsNullOrWhiteSpace(request.Gender))
+            {
+                selfProfile.Gender = request.Gender.Trim();
+            }
+        }
+        else if (request.DateOfBirth.HasValue && !string.IsNullOrWhiteSpace(request.Gender))
+        {
+            context.PatientProfiles.Add(new PatientProfile
+            {
+                UserId = userId,
+                FullName = user.FullName,
+                DateOfBirth = request.DateOfBirth.Value.ToDateTime(TimeOnly.MinValue),
+                Gender = request.Gender.Trim(),
+                Phone = user.Phone,
+                Relationship = "Bản thân"
+            });
+        }
+
+        await context.SaveChangesAsync();
+
+        var newToken = jwtProvider.GenerateToken(user);
+        var updatedProfile = await GetMyProfile(userId);
+
+        return new UpdateMyProfileResponse
+        {
+            Message = "Cập nhật thông tin thành công.",
+            Token = newToken,
+            Profile = updatedProfile
+        };
+    }
 }

@@ -26,6 +26,14 @@ public class DepartmentController(IDepartmentService departmentService) : Contro
         return Ok(department);
     }
 
+    // GET /api/departments/{id}/doctors?page=1&pageSize=10 — Danh sách bác sĩ theo chuyên khoa
+    [HttpGet("{id}/doctors")]
+    public async Task<IActionResult> GetDoctors(int id, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        var result = await _departmentService.GetDoctorsAsync(id, page, pageSize);
+        return Ok(result);
+    }
+
     // POST /api/departments — Thêm mới 
     [HttpPost]
     public async Task<IActionResult> Create(CreateDepartmentDto dto)

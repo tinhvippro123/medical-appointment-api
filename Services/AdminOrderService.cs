@@ -12,12 +12,48 @@ public class AdminOrderService(ApplicationDbContext context) : IAdminOrderServic
 
     public async Task<PagedResult<AdminOrderResponse>> GetAllOrdersAsync(AdminOrderQueryParameters query)
     {
+        if (query.FromDate.HasValue && query.ToDate.HasValue &&
+            query.FromDate.Value.Date > query.ToDate.Value.Date)
+        {
+            throw new BadRequestException(ErrorCode.INVALID_DATE_RANGE);
+        }
+
         var baseQuery = _context.Orders.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(query.Status))
         {
             var filterStatus = query.Status.Trim();
             baseQuery = baseQuery.Where(o => o.Status == filterStatus);
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Keyword))
+        {
+            var keyword = query.Keyword.Trim();
+            if (keyword.StartsWith('#') && int.TryParse(keyword[1..], out var exactOrderId))
+            {
+                baseQuery = baseQuery.Where(o => o.Id == exactOrderId);
+            }
+            else
+            {
+                var hasOrderId = int.TryParse(keyword, out var orderId);
+                baseQuery = baseQuery.Where(o =>
+                    o.User.FullName.Contains(keyword) ||
+                    o.User.Phone.Contains(keyword) ||
+                    (hasOrderId && o.Id == orderId));
+            }
+        }
+
+        // Quy đổi khoảng ngày Việt Nam (UTC+7) sang mốc UTC lưu trong CreatedAt
+        if (query.FromDate.HasValue)
+        {
+            var fromUtc = DateTime.SpecifyKind(query.FromDate.Value.Date.AddHours(-7), DateTimeKind.Utc);
+            baseQuery = baseQuery.Where(o => o.CreatedAt >= fromUtc);
+        }
+
+        if (query.ToDate.HasValue)
+        {
+            var toUtcExclusive = DateTime.SpecifyKind(query.ToDate.Value.Date.AddDays(1).AddHours(-7), DateTimeKind.Utc);
+            baseQuery = baseQuery.Where(o => o.CreatedAt < toUtcExclusive);
         }
 
         var totalCount = await baseQuery.CountAsync();

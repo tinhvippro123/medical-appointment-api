@@ -12,4 +12,11 @@ public class AdminOrderQueryParameters
 
     [RegularExpression("^(Pending|Confirmed|Completed|Cancelled)$", ErrorMessage = "Trạng thái lọc không hợp lệ")]
     public string? Status { get; set; }
+
+    [StringLength(100, ErrorMessage = "Từ khóa tìm kiếm tối đa 100 ký tự")]
+    public string? Keyword { get; set; }
+
+    public DateTime? FromDate { get; set; }
+
+    public DateTime? ToDate { get; set; }
 }

@@ -42,4 +42,27 @@ public class AuthController(IAuthService authService) : ControllerBase
     {
         return Ok(new{message = "Đăng xuất thành công."});
     }
+
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
+    {
+        var devOtp = await authService.ForgotPassword(request);
+        if (!string.IsNullOrEmpty(devOtp))
+        {
+            return Ok(new
+            {
+                message = "Mã OTP đặt lại mật khẩu đã được gửi tới email của bạn.",
+                devOtp
+            });
+        }
+
+        return Ok(new { message = "Mã OTP đặt lại mật khẩu đã được gửi tới email của bạn." });
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
+    {
+        await authService.ResetPassword(request);
+        return Ok(new { message = "Đặt lại mật khẩu thành công! Vui lòng đăng nhập bằng mật khẩu mới." });
+    }
 }

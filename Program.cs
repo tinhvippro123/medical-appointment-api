@@ -23,6 +23,8 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 // --- Dependency Injection ---
+builder.Services.AddSingleton<IOtpService, OtpService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IJwtProvider, JwtProvider>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IAuthService, AuthService>();

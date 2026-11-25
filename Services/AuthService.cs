@@ -8,8 +8,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MedicalAppointment.API.Services;
 
-public class AuthService(ApplicationDbContext context, IJwtProvider jwtProvider, IPasswordHasher passwordHasher) : IAuthService
+public class AuthService(
+    ApplicationDbContext context,
+    IJwtProvider jwtProvider,
+    IPasswordHasher passwordHasher,
+    IOtpService otpService,
+    IEmailService emailService,
+    IHostEnvironment hostEnvironment) : IAuthService
 {
+    private const string ForgotPasswordOtpPurpose = "forgot-password";
+    private static readonly TimeSpan OtpValidDuration = TimeSpan.FromMinutes(5);
     public async Task Register(RegisterRequest request)
     {
         var isExist = await context.Users.AnyAsync(u => u.Phone == request.Phone);
@@ -73,5 +81,60 @@ public class AuthService(ApplicationDbContext context, IJwtProvider jwtProvider,
         user.Password = passwordHasher.Hash(request.NewPassword);
         await context.SaveChangesAsync();
     }
- 
+
+    public async Task<string?> ForgotPassword(ForgotPasswordRequest request)
+    {
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        var user = await context.Users.FirstOrDefaultAsync(
+            u => u.Email != null && u.Email.ToLower() == normalizedEmail);
+
+        if (user == null)
+        {
+            throw new BadRequestException(ErrorCode.EMAIL_NOT_FOUND);
+        }
+
+        if (!user.IsActive)
+        {
+            throw new BadRequestException(ErrorCode.ACCOUNT_DISABLED);
+        }
+
+        var otp = otpService.GenerateOtp(ForgotPasswordOtpPurpose, normalizedEmail, OtpValidDuration);
+        var sentViaSmtp = await emailService.SendOtpEmailAsync(
+            user.Email!,
+            user.FullName,
+            otp,
+            "đặt lại mật khẩu");
+
+        return !sentViaSmtp && hostEnvironment.IsDevelopment() ? otp : null;
+    }
+
+    public async Task ResetPassword(ResetPasswordRequest request)
+    {
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        var user = await context.Users.FirstOrDefaultAsync(
+            u => u.Email != null && u.Email.ToLower() == normalizedEmail);
+
+        if (user == null)
+        {
+            throw new BadRequestException(ErrorCode.EMAIL_NOT_FOUND);
+        }
+
+        if (!user.IsActive)
+        {
+            throw new BadRequestException(ErrorCode.ACCOUNT_DISABLED);
+        }
+
+        var isOtpValid = otpService.VerifyAndConsumeOtp(
+            ForgotPasswordOtpPurpose,
+            normalizedEmail,
+            request.Otp);
+
+        if (!isOtpValid)
+        {
+            throw new BadRequestException(ErrorCode.INVALID_OR_EXPIRED_OTP);
+        }
+
+        user.Password = passwordHasher.Hash(request.NewPassword);
+        await context.SaveChangesAsync();
+    }
 }

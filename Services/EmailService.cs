@@ -28,8 +28,8 @@ public class EmailService(IConfiguration configuration, ILogger<EmailService> lo
         var host = configuration["EmailSettings:SmtpHost"]!;
         var port = int.TryParse(configuration["EmailSettings:SmtpPort"], out var parsedPort) ? parsedPort : 587;
         var enableSsl = !bool.TryParse(configuration["EmailSettings:EnableSsl"], out var ssl) || ssl;
-        var username = configuration["EmailSettings:Username"]!;
-        var password = configuration["EmailSettings:Password"]!;
+        var username = configuration["EmailSettings:Username"]!.Trim();
+        var password = configuration["EmailSettings:Password"]!.Replace(" ", "").Trim();
         var senderEmail = string.IsNullOrWhiteSpace(configuration["EmailSettings:SenderEmail"])
             ? username
             : configuration["EmailSettings:SenderEmail"]!;

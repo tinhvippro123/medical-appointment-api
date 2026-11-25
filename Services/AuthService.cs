@@ -1,3 +1,5 @@
+using System.Net.Http.Headers;
+using System.Text.Json;
 using MedicalAppointment.API.Data;
 using MedicalAppointment.API.DTOs;
 using MedicalAppointment.API.Entities;
@@ -14,11 +16,20 @@ public class AuthService(
     IPasswordHasher passwordHasher,
     IOtpService otpService,
     IEmailService emailService,
-    IHostEnvironment hostEnvironment) : IAuthService
+    IHostEnvironment hostEnvironment,
+    IHttpClientFactory httpClientFactory,
+    IConfiguration configuration) : IAuthService
 {
     private const string ForgotPasswordOtpPurpose = "forgot-password";
     private const string VerifyEmailOtpPurpose = "verify-email";
     private static readonly TimeSpan OtpValidDuration = TimeSpan.FromMinutes(5);
+
+    private sealed record VerifiedSocialIdentity(
+        string ProviderUserId,
+        string FullName,
+        string? Email,
+        string? Phone,
+        string? AvatarUrl);
 
     public async Task<RegisterResponse> Register(RegisterRequest request)
     {
@@ -118,6 +129,7 @@ public class AuthService(
             DevOtp = !sentViaSmtp && hostEnvironment.IsDevelopment() ? otp : null
         };
     }
+
     public async Task<string> Login(LoginRequest request)
     {
         var user = await context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Phone == request.Phone);
@@ -141,7 +153,8 @@ public class AuthService(
             throw new BadRequestException(ErrorCode.PASSWORD_MISMATCH);
         }
 
-        var user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId) ?? throw new BadRequestException(ErrorCode.USER_NOT_FOUND);
+        var user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId)
+            ?? throw new BadRequestException(ErrorCode.USER_NOT_FOUND);
         if (!passwordHasher.Verifty(request.OldPassword, user.Password))
         {
             throw new BadRequestException(ErrorCode.WRONG_OLD_PASSWORD);
@@ -384,17 +397,32 @@ public class AuthService(
             _ => throw new BadRequestException(ErrorCode.INVALID_SOCIAL_PROVIDER)
         };
 
-        var socialId = request.ProviderUserId.Trim();
-        var fullName = request.FullName.Trim();
-        var normalizedEmail = string.IsNullOrWhiteSpace(request.Email)
+        var verified = providerKey switch
+        {
+            "google" => await ResolveGoogleIdentityAsync(request),
+            "facebook" => await ResolveFacebookIdentityAsync(request),
+            "zalo" => await ResolveZaloIdentityAsync(request),
+            _ => throw new BadRequestException(ErrorCode.INVALID_SOCIAL_PROVIDER)
+        };
+
+        var socialId = verified.ProviderUserId.Trim();
+        var fullName = string.IsNullOrWhiteSpace(verified.FullName)
+            ? $"Người dùng {displayProvider}"
+            : verified.FullName.Trim();
+        if (fullName.Length > 95)
+        {
+            fullName = fullName[..95];
+        }
+
+        var normalizedEmail = string.IsNullOrWhiteSpace(verified.Email)
             ? null
-            : request.Email.Trim().ToLowerInvariant();
-        var trimmedPhone = string.IsNullOrWhiteSpace(request.Phone)
+            : verified.Email.Trim().ToLowerInvariant();
+        var trimmedPhone = string.IsNullOrWhiteSpace(verified.Phone)
             ? null
-            : request.Phone.Trim();
-        var avatarUrl = string.IsNullOrWhiteSpace(request.AvatarUrl)
+            : verified.Phone.Trim();
+        var avatarUrl = string.IsNullOrWhiteSpace(verified.AvatarUrl)
             ? null
-            : request.AvatarUrl.Trim();
+            : verified.AvatarUrl.Trim();
 
         User? user = providerKey switch
         {
@@ -500,5 +528,226 @@ public class AuthService(
             Provider = displayProvider,
             IsNewUser = isNewUser
         };
+    }
+
+    private async Task<VerifiedSocialIdentity> ResolveGoogleIdentityAsync(SocialLoginRequest request)
+    {
+        var http = httpClientFactory.CreateClient();
+
+        if (!string.IsNullOrWhiteSpace(request.IdToken))
+        {
+            var resp = await http.GetAsync(
+                $"https://oauth2.googleapis.com/tokeninfo?id_token={Uri.EscapeDataString(request.IdToken.Trim())}");
+
+            if (!resp.IsSuccessStatusCode)
+            {
+                throw new BadRequestException(ErrorCode.SOCIAL_TOKEN_INVALID);
+            }
+
+            using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
+            var root = doc.RootElement;
+            var sub = GetJsonString(root, "sub");
+            if (string.IsNullOrWhiteSpace(sub))
+            {
+                throw new BadRequestException(ErrorCode.SOCIAL_TOKEN_INVALID);
+            }
+
+            var aud = GetJsonString(root, "aud");
+            var expectedWebClientId = configuration["SocialAuth:Google:WebClientId"];
+            var expectedAndroidClientId = configuration["SocialAuth:Google:AndroidClientId"];
+            if (!string.IsNullOrWhiteSpace(aud)
+                && !string.IsNullOrWhiteSpace(expectedWebClientId)
+                && !string.Equals(aud, expectedWebClientId, StringComparison.Ordinal)
+                && !string.Equals(aud, expectedAndroidClientId, StringComparison.Ordinal))
+            {
+                throw new BadRequestException(ErrorCode.SOCIAL_TOKEN_INVALID);
+            }
+
+            var email = GetJsonString(root, "email") ?? request.Email;
+            var name = GetJsonString(root, "name") ?? request.FullName ?? email ?? "Người dùng Google";
+            var picture = GetJsonString(root, "picture") ?? request.AvatarUrl;
+
+            return new VerifiedSocialIdentity(sub, name, email, request.Phone, picture);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.AccessToken))
+        {
+            using var msg = new HttpRequestMessage(
+                HttpMethod.Get,
+                "https://www.googleapis.com/oauth2/v3/userinfo");
+            msg.Headers.Authorization = new AuthenticationHeaderValue("Bearer", request.AccessToken.Trim());
+
+            var resp = await http.SendAsync(msg);
+            if (!resp.IsSuccessStatusCode)
+            {
+                throw new BadRequestException(ErrorCode.SOCIAL_TOKEN_INVALID);
+            }
+
+            using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
+            var root = doc.RootElement;
+            var sub = GetJsonString(root, "sub");
+            if (string.IsNullOrWhiteSpace(sub))
+            {
+                throw new BadRequestException(ErrorCode.SOCIAL_TOKEN_INVALID);
+            }
+
+            var email = GetJsonString(root, "email") ?? request.Email;
+            var name = GetJsonString(root, "name") ?? request.FullName ?? email ?? "Người dùng Google";
+            var picture = GetJsonString(root, "picture") ?? request.AvatarUrl;
+
+            return new VerifiedSocialIdentity(sub, name, email, request.Phone, picture);
+        }
+
+        return FallbackDevIdentity(request);
+    }
+
+    private async Task<VerifiedSocialIdentity> ResolveFacebookIdentityAsync(SocialLoginRequest request)
+    {
+        if (!string.IsNullOrWhiteSpace(request.AccessToken))
+        {
+            var http = httpClientFactory.CreateClient();
+            var url = $"https://graph.facebook.com/me?fields=id,name,email,picture.type(large)&access_token={Uri.EscapeDataString(request.AccessToken.Trim())}";
+            var resp = await http.GetAsync(url);
+
+            if (!resp.IsSuccessStatusCode)
+            {
+                throw new BadRequestException(ErrorCode.SOCIAL_TOKEN_INVALID);
+            }
+
+            using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
+            var root = doc.RootElement;
+            var fbId = GetJsonString(root, "id");
+            if (string.IsNullOrWhiteSpace(fbId))
+            {
+                throw new BadRequestException(ErrorCode.SOCIAL_TOKEN_INVALID);
+            }
+
+            var name = GetJsonString(root, "name") ?? request.FullName ?? "Người dùng Facebook";
+            var email = GetJsonString(root, "email") ?? request.Email;
+            string? avatar = request.AvatarUrl;
+            if (root.TryGetProperty("picture", out var picObj)
+                && picObj.TryGetProperty("data", out var dataObj))
+            {
+                avatar = GetJsonString(dataObj, "url") ?? avatar;
+            }
+
+            return new VerifiedSocialIdentity(fbId, name, email, request.Phone, avatar);
+        }
+
+        return FallbackDevIdentity(request);
+    }
+
+    private async Task<VerifiedSocialIdentity> ResolveZaloIdentityAsync(SocialLoginRequest request)
+    {
+        var http = httpClientFactory.CreateClient();
+        string? zaloAccessToken = request.AccessToken?.Trim();
+
+        if (!string.IsNullOrWhiteSpace(request.OAuthCode))
+        {
+            var appId = configuration["SocialAuth:Zalo:AppId"]?.Trim();
+            var appSecret = configuration["SocialAuth:Zalo:AppSecret"]?.Trim();
+            if (string.IsNullOrWhiteSpace(appId) || string.IsNullOrWhiteSpace(appSecret))
+            {
+                throw new BadRequestException(
+                    ErrorCode.SocialAuthFailed("Chưa cấu hình Zalo AppId hoặc AppSecret trên máy chủ!"));
+            }
+
+            var formFields = new Dictionary<string, string>
+            {
+                ["code"] = request.OAuthCode.Trim(),
+                ["app_id"] = appId,
+                ["grant_type"] = "authorization_code"
+            };
+            if (!string.IsNullOrWhiteSpace(request.CodeVerifier))
+            {
+                formFields["code_verifier"] = request.CodeVerifier.Trim();
+            }
+
+            using var tokenReq = new HttpRequestMessage(
+                HttpMethod.Post,
+                "https://oauth.zaloapp.com/v4/access_token")
+            {
+                Content = new FormUrlEncodedContent(formFields)
+            };
+            tokenReq.Headers.Add("secret_key", appSecret);
+
+            var tokenResp = await http.SendAsync(tokenReq);
+            var tokenBody = await tokenResp.Content.ReadAsStringAsync();
+            using var tokenDoc = JsonDocument.Parse(tokenBody);
+            var tokenRoot = tokenDoc.RootElement;
+
+            zaloAccessToken = GetJsonString(tokenRoot, "access_token");
+            if (string.IsNullOrWhiteSpace(zaloAccessToken))
+            {
+                var errDesc = GetJsonString(tokenRoot, "error_description")
+                    ?? GetJsonString(tokenRoot, "error_name")
+                    ?? "Không đổi được mã xác thực Zalo.";
+                throw new BadRequestException(ErrorCode.SocialAuthFailed($"Zalo OAuth: {errDesc}"));
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(zaloAccessToken))
+        {
+            using var meReq = new HttpRequestMessage(
+                HttpMethod.Get,
+                "https://graph.zalo.me/v2.0/me?fields=id,name,picture");
+            meReq.Headers.Add("access_token", zaloAccessToken);
+
+            var meResp = await http.SendAsync(meReq);
+            if (!meResp.IsSuccessStatusCode)
+            {
+                throw new BadRequestException(ErrorCode.SOCIAL_TOKEN_INVALID);
+            }
+
+            using var meDoc = JsonDocument.Parse(await meResp.Content.ReadAsStringAsync());
+            var meRoot = meDoc.RootElement;
+            var zaloId = GetJsonString(meRoot, "id");
+            if (string.IsNullOrWhiteSpace(zaloId))
+            {
+                var msg = GetJsonString(meRoot, "message") ?? "Không đọc được thông tin tài khoản Zalo.";
+                throw new BadRequestException(ErrorCode.SocialAuthFailed(msg));
+            }
+
+            var name = GetJsonString(meRoot, "name") ?? request.FullName ?? "Người dùng Zalo";
+            string? avatar = request.AvatarUrl;
+            if (meRoot.TryGetProperty("picture", out var picObj)
+                && picObj.TryGetProperty("data", out var dataObj))
+            {
+                avatar = GetJsonString(dataObj, "url") ?? avatar;
+            }
+
+            return new VerifiedSocialIdentity(zaloId, name, request.Email, request.Phone, avatar);
+        }
+
+        return FallbackDevIdentity(request);
+    }
+
+    private VerifiedSocialIdentity FallbackDevIdentity(SocialLoginRequest request)
+    {
+        if (!hostEnvironment.IsDevelopment() || string.IsNullOrWhiteSpace(request.ProviderUserId))
+        {
+            throw new BadRequestException(ErrorCode.SOCIAL_TOKEN_INVALID);
+        }
+
+        return new VerifiedSocialIdentity(
+            request.ProviderUserId.Trim(),
+            string.IsNullOrWhiteSpace(request.FullName) ? "Người dùng" : request.FullName.Trim(),
+            request.Email,
+            request.Phone,
+            request.AvatarUrl);
+    }
+
+    private static string? GetJsonString(JsonElement element, string propertyName)
+    {
+        if (element.TryGetProperty(propertyName, out var prop))
+        {
+            return prop.ValueKind switch
+            {
+                JsonValueKind.String => prop.GetString(),
+                JsonValueKind.Number => prop.GetRawText(),
+                _ => null
+            };
+        }
+        return null;
     }
 }

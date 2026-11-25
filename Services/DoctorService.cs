@@ -74,7 +74,7 @@ public class DoctorService : IDoctorService
                 Description = d.Description,
                 AvatarUrl = d.AvatarUrl,
                 ExperienceYears = d.ExperienceYears,
-                ConsultationFee = d.ConsultationFee,
+                ConsultationFee = d.Department.ConsultationFee,
                 IsActive = d.IsActive,
                 CreatedAt = d.CreatedAt,
                 UpdatedAt = d.UpdatedAt,
@@ -142,7 +142,7 @@ public class DoctorService : IDoctorService
                 Description = d.Description,
                 AvatarUrl = d.AvatarUrl,
                 ExperienceYears = d.ExperienceYears,
-                ConsultationFee = d.ConsultationFee,
+                ConsultationFee = d.Department.ConsultationFee,
                 IsActive = d.IsActive,
                 CreatedAt = d.CreatedAt,
                 UpdatedAt = d.UpdatedAt
@@ -200,7 +200,7 @@ public class DoctorService : IDoctorService
                 Description = d.Description,
                 AvatarUrl = d.AvatarUrl,
                 ExperienceYears = d.ExperienceYears,
-                ConsultationFee = d.ConsultationFee,
+                ConsultationFee = d.Department.ConsultationFee,
                 IsActive = d.IsActive,
                 CreatedAt = d.CreatedAt,
                 UpdatedAt = d.UpdatedAt
@@ -263,7 +263,6 @@ public class DoctorService : IDoctorService
             Description = request.Description?.Trim(),
             AvatarUrl = avatarUrl,
             ExperienceYears = request.ExperienceYears!.Value,
-            ConsultationFee = request.ConsultationFee!.Value,
             IsActive = true
         };
 
@@ -344,7 +343,6 @@ public class DoctorService : IDoctorService
         doctor.Room = room;
         doctor.Description = request.Description?.Trim();
         doctor.ExperienceYears = request.ExperienceYears!.Value;
-        doctor.ConsultationFee = request.ConsultationFee!.Value;
 
         // Ảnh: chỉ cập nhật AvatarUrl khi có ảnh mới
         if (newAvatarUrl != null)
@@ -441,7 +439,7 @@ public class DoctorService : IDoctorService
             Description = d.Description,
             AvatarUrl = d.AvatarUrl,
             ExperienceYears = d.ExperienceYears,
-            ConsultationFee = d.ConsultationFee,
+            ConsultationFee = d.Department?.ConsultationFee ?? 0,
             IsActive = d.IsActive,
             CreatedAt = d.CreatedAt,
             UpdatedAt = d.UpdatedAt

@@ -75,6 +75,9 @@ namespace MedicalAppointment.API.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<decimal>("ConsultationFee")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -115,9 +118,6 @@ namespace MedicalAppointment.API.Migrations
 
                     b.Property<string>("AvatarUrl")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("ConsultationFee")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");

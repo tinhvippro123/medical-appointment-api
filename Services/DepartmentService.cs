@@ -30,6 +30,7 @@ public class DepartmentService(ApplicationDbContext context, IWebHostEnvironment
                 Name = d.Name,
                 Description = d.Description,
                 ImageUrl = d.ImageUrl,
+                ConsultationFee = d.ConsultationFee,
                 IsActive = d.IsActive,
                 CreatedAt = d.CreatedAt,
                 UpdatedAt = d.UpdatedAt
@@ -51,6 +52,7 @@ public class DepartmentService(ApplicationDbContext context, IWebHostEnvironment
             Name = d.Name,
             Description = d.Description,
             ImageUrl = d.ImageUrl,
+            ConsultationFee = d.ConsultationFee,
             IsActive = d.IsActive,
             CreatedAt = d.CreatedAt,
             UpdatedAt = d.UpdatedAt
@@ -100,7 +102,7 @@ public class DepartmentService(ApplicationDbContext context, IWebHostEnvironment
                 Description = d.Description,
                 AvatarUrl = d.AvatarUrl,
                 ExperienceYears = d.ExperienceYears,
-                ConsultationFee = d.ConsultationFee,
+                ConsultationFee = department.ConsultationFee,
                 IsActive = d.IsActive,
                 CreatedAt = d.CreatedAt,
                 UpdatedAt = d.UpdatedAt
@@ -133,6 +135,7 @@ public class DepartmentService(ApplicationDbContext context, IWebHostEnvironment
             
             // Đã có nhưng bị xóa mềm -> Khôi phục
             department.IsActive = true;
+            department.ConsultationFee = dto.ConsultationFee!.Value;
             department.Description = dto.Description;
             department.ImageUrl = dto.ImageUrl;
         }
@@ -142,6 +145,7 @@ public class DepartmentService(ApplicationDbContext context, IWebHostEnvironment
             department = new Department
             {
                 Name = dto.Name,
+                ConsultationFee = dto.ConsultationFee!.Value,
                 Description = dto.Description,
                 ImageUrl = dto.ImageUrl
             };
@@ -156,6 +160,7 @@ public class DepartmentService(ApplicationDbContext context, IWebHostEnvironment
             Name = department.Name,
             Description = department.Description,
             ImageUrl = department.ImageUrl,
+            ConsultationFee = department.ConsultationFee,
             IsActive = department.IsActive,
             CreatedAt = department.CreatedAt,
             UpdatedAt = department.UpdatedAt
@@ -176,6 +181,7 @@ public class DepartmentService(ApplicationDbContext context, IWebHostEnvironment
             throw new BadRequestException(ErrorCode.DEPARTMENT_NAME_EXISTS);
 
         department.Name = dto.Name;
+        department.ConsultationFee = dto.ConsultationFee!.Value;
         department.Description = dto.Description;
         department.ImageUrl = dto.ImageUrl;
 
@@ -187,6 +193,7 @@ public class DepartmentService(ApplicationDbContext context, IWebHostEnvironment
             Name = department.Name,
             Description = department.Description,
             ImageUrl = department.ImageUrl,
+            ConsultationFee = department.ConsultationFee,
             IsActive = department.IsActive,
             CreatedAt = department.CreatedAt,
             UpdatedAt = department.UpdatedAt
@@ -278,6 +285,7 @@ public class DepartmentService(ApplicationDbContext context, IWebHostEnvironment
             Name = department.Name,
             Description = department.Description,
             ImageUrl = department.ImageUrl,
+            ConsultationFee = department.ConsultationFee,
             IsActive = department.IsActive,
             CreatedAt = department.CreatedAt,
             UpdatedAt = department.UpdatedAt
@@ -305,6 +313,7 @@ public class DepartmentService(ApplicationDbContext context, IWebHostEnvironment
             Name = department.Name,
             Description = department.Description,
             ImageUrl = department.ImageUrl,
+            ConsultationFee = department.ConsultationFee,
             IsActive = department.IsActive,
             CreatedAt = department.CreatedAt,
             UpdatedAt = department.UpdatedAt

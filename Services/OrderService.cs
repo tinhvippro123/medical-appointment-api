@@ -330,6 +330,23 @@ public class OrderService(ApplicationDbContext dbContext) : IOrderService
             baseQuery = baseQuery.Where(o => o.Status == filterStatus);
         }
 
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            var keyword = query.Search.Trim();
+            var idCandidate = keyword.TrimStart('#');
+            var hasOrderId = int.TryParse(idCandidate, out var parsedOrderId);
+
+            baseQuery = baseQuery.Where(o =>
+                (hasOrderId && o.Id == parsedOrderId) ||
+                (o.TransactionId != null && o.TransactionId.Contains(keyword)) ||
+                o.PaymentMethod.Contains(keyword) ||
+                o.OrderDetails.Any(od =>
+                    od.Doctor.FullName.Contains(keyword) ||
+                    od.Doctor.Department.Name.Contains(keyword) ||
+                    od.PatientProfile.FullName.Contains(keyword) ||
+                    (od.Doctor.Room != null && od.Doctor.Room.RoomNumber.Contains(keyword))));
+        }
+
         var totalCount = await baseQuery.CountAsync();
 
         var items = await baseQuery
@@ -364,6 +381,27 @@ public class OrderService(ApplicationDbContext dbContext) : IOrderService
     public async Task<OrderDetailResponse> GetOrderByIdAsync(int userId, int orderId)
     {
         return await GetOrderByIdInternalAsync(userId, orderId);
+    }
+
+    public async Task DiscardUnpaidOrderAsync(int userId, int orderId)
+    {
+        var order = await dbContext.Orders
+            .Include(o => o.OrderDetails)
+            .FirstOrDefaultAsync(o => o.Id == orderId && o.UserId == userId);
+
+        if (order == null)
+        {
+            return;
+        }
+
+        if (string.Equals(order.PaymentStatus, "Paid", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new BadRequestException(ErrorCode.ORDER_ALREADY_PAID);
+        }
+
+        dbContext.OrderDetails.RemoveRange(order.OrderDetails);
+        dbContext.Orders.Remove(order);
+        await dbContext.SaveChangesAsync();
     }
 
     private async Task<OrderDetailResponse> GetOrderByIdInternalAsync(int userId, int orderId)

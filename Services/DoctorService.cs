@@ -393,9 +393,18 @@ public class DoctorService : IDoctorService
             throw new BadRequestException(ErrorCode.DOCTOR_HAS_ORDERS);
         }
 
-        // Xóa mềm: IsActive = false, KHÔNG xóa file ảnh
+        // Xóa mềm: IsActive = false và xóa luôn file ảnh vật lý kèm theo trên server
+        var oldAvatarUrl = doctor.AvatarUrl;
         doctor.IsActive = false;
+        doctor.AvatarUrl = null;
         await _context.SaveChangesAsync();
+
+        if (!string.IsNullOrWhiteSpace(oldAvatarUrl)
+            && oldAvatarUrl.StartsWith("/images/doctors/", StringComparison.OrdinalIgnoreCase)
+            && !await _context.Doctors.AnyAsync(d => d.AvatarUrl == oldAvatarUrl))
+        {
+            _imageHelper.DeleteImage(oldAvatarUrl);
+        }
     }
 
     /// <summary>

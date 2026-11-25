@@ -372,4 +372,133 @@ public class AuthService(
             Profile = updatedProfile
         };
     }
+
+    public async Task<SocialLoginResponse> SocialLogin(SocialLoginRequest request)
+    {
+        var rawProvider = request.Provider.Trim().ToLowerInvariant();
+        var (providerKey, displayProvider, phonePrefix) = rawProvider switch
+        {
+            "google" or "gmail" => ("google", "Google", "GG_"),
+            "facebook" => ("facebook", "Facebook", "FB_"),
+            "zalo" => ("zalo", "Zalo", "ZL_"),
+            _ => throw new BadRequestException(ErrorCode.INVALID_SOCIAL_PROVIDER)
+        };
+
+        var socialId = request.ProviderUserId.Trim();
+        var fullName = request.FullName.Trim();
+        var normalizedEmail = string.IsNullOrWhiteSpace(request.Email)
+            ? null
+            : request.Email.Trim().ToLowerInvariant();
+        var trimmedPhone = string.IsNullOrWhiteSpace(request.Phone)
+            ? null
+            : request.Phone.Trim();
+        var avatarUrl = string.IsNullOrWhiteSpace(request.AvatarUrl)
+            ? null
+            : request.AvatarUrl.Trim();
+
+        User? user = providerKey switch
+        {
+            "google" => await context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.GoogleId == socialId),
+            "facebook" => await context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.FacebookId == socialId),
+            "zalo" => await context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.ZaloId == socialId),
+            _ => null
+        };
+
+        if (user == null && normalizedEmail != null)
+        {
+            user = await context.Users.Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Email != null && u.Email.ToLower() == normalizedEmail);
+        }
+
+        if (user == null && trimmedPhone != null)
+        {
+            user = await context.Users.Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Phone == trimmedPhone);
+        }
+
+        var isNewUser = false;
+        if (user != null)
+        {
+            if (!user.IsActive)
+            {
+                throw new BadRequestException(ErrorCode.ACCOUNT_DISABLED);
+            }
+
+            switch (providerKey)
+            {
+                case "google":
+                    user.GoogleId ??= socialId;
+                    break;
+                case "facebook":
+                    user.FacebookId ??= socialId;
+                    break;
+                case "zalo":
+                    user.ZaloId ??= socialId;
+                    break;
+            }
+
+            if (avatarUrl != null && string.IsNullOrWhiteSpace(user.AvatarUrl))
+            {
+                user.AvatarUrl = avatarUrl;
+            }
+
+            await context.SaveChangesAsync();
+        }
+        else
+        {
+            isNewUser = true;
+            var patientRole = await context.Roles.FirstOrDefaultAsync(r => r.Key == "PATIENT")
+                ?? throw new Exception("Role PATIENT không tồn tại trong DB.");
+
+            string assignedPhone;
+            if (trimmedPhone != null && !await context.Users.AnyAsync(u => u.Phone == trimmedPhone))
+            {
+                assignedPhone = trimmedPhone;
+            }
+            else
+            {
+                do
+                {
+                    assignedPhone = $"{phonePrefix}{Random.Shared.Next(1000000, 9999999)}";
+                } while (await context.Users.AnyAsync(u => u.Phone == assignedPhone));
+            }
+
+            user = new User
+            {
+                FullName = fullName,
+                Email = normalizedEmail,
+                Phone = assignedPhone,
+                Password = passwordHasher.Hash(Guid.NewGuid().ToString("N")),
+                AvatarUrl = avatarUrl,
+                RoleId = patientRole.Id,
+                Role = patientRole,
+                GoogleId = providerKey == "google" ? socialId : null,
+                FacebookId = providerKey == "facebook" ? socialId : null,
+                ZaloId = providerKey == "zalo" ? socialId : null,
+                IsActive = true
+            };
+
+            context.Users.Add(user);
+            await context.SaveChangesAsync();
+
+            context.PatientProfiles.Add(new PatientProfile
+            {
+                UserId = user.Id,
+                FullName = fullName,
+                DateOfBirth = new DateTime(2000, 1, 1),
+                Gender = "Khác",
+                Phone = assignedPhone.StartsWith("0") ? assignedPhone : null,
+                Relationship = "Bản thân"
+            });
+            await context.SaveChangesAsync();
+        }
+
+        return new SocialLoginResponse
+        {
+            Token = jwtProvider.GenerateToken(user),
+            Message = $"Đăng nhập bằng {displayProvider} thành công!",
+            Provider = displayProvider,
+            IsNewUser = isNewUser
+        };
+    }
 }

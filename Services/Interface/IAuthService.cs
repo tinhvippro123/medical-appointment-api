@@ -14,4 +14,5 @@ public interface IAuthService
     Task VerifyCurrentPassword(int userId, string password);
     Task<MyProfileResponse> GetMyProfile(int userId);
     Task<UpdateMyProfileResponse> UpdateMyProfile(int userId, UpdateMyProfileRequest request);
+    Task<SocialLoginResponse> SocialLogin(SocialLoginRequest request);
 }

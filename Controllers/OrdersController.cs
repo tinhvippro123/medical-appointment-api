@@ -71,4 +71,21 @@ public class OrdersController(IOrderService orderService) : ControllerBase
         var result = await orderService.GetOrderByIdAsync(userId.Value, id);
         return Ok(result);
     }
+
+    /// <summary>
+    /// DELETE /api/orders/{id:int}/unpaid
+    /// Tự động thu hồi/xóa đơn tạm chưa thanh toán khi người dùng thoát hoặc hủy cổng thanh toán online.
+    /// </summary>
+    [HttpDelete("{id:int}/unpaid")]
+    public async Task<IActionResult> DiscardUnpaid(int id)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == null)
+        {
+            return Unauthorized();
+        }
+
+        await orderService.DiscardUnpaidOrderAsync(userId.Value, id);
+        return NoContent();
+    }
 }

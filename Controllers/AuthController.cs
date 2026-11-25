@@ -130,4 +130,11 @@ public class AuthController(IAuthService authService) : ControllerBase
         var result = await authService.UpdateMyProfile(userId, request);
         return Ok(result);
     }
+
+    [HttpPost("social-login")]
+    public async Task<IActionResult> SocialLogin(SocialLoginRequest request)
+    {
+        var result = await authService.SocialLogin(request);
+        return Ok(result);
+    }
 }

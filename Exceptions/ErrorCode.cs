@@ -17,6 +17,7 @@ public class ErrorCode(string code, string message)
     public static readonly ErrorCode INVALID_OR_EXPIRED_OTP = new("INVALID_OR_EXPIRED_OTP", "Mã OTP không chính xác hoặc đã hết hạn!");
     public static readonly ErrorCode EMAIL_SEND_FAILED = new("EMAIL_SEND_FAILED", "Không thể gửi email mã xác thực lúc này, vui lòng thử lại sau!");
     public static readonly ErrorCode EMAIL_ALREADY_VERIFIED = new("EMAIL_ALREADY_VERIFIED", "Tài khoản này đã được xác thực email trước đó!");
+    public static readonly ErrorCode INVALID_SOCIAL_PROVIDER = new("INVALID_SOCIAL_PROVIDER", "Phương thức đăng nhập mạng xã hội không hợp lệ (chỉ hỗ trợ Google, Facebook, Zalo)!");
 
     // --- DEPARTMENT ---
     public static readonly ErrorCode DEPARTMENT_NOT_FOUND = new("DEPARTMENT_NOT_FOUND", "Không tìm thấy chuyên khoa!");

@@ -12,4 +12,7 @@ public class OrderQueryParameters
 
     [RegularExpression("^(Pending|Confirmed|Completed|Cancelled)$", ErrorMessage = "Trạng thái lọc không hợp lệ")]
     public string? Status { get; set; }
+
+    [MaxLength(100, ErrorMessage = "Từ khóa tìm kiếm tối đa 100 ký tự")]
+    public string? Search { get; set; }
 }

@@ -50,6 +50,7 @@ public class OrderService(ApplicationDbContext dbContext) : IOrderService
         {
             var appt = request.Appointment!;
             var doctor = await dbContext.Doctors
+                .Include(d => d.Department)
                 .FirstOrDefaultAsync(d => d.Id == appt.DoctorId!.Value);
             var profile = await dbContext.PatientProfiles
                 .FirstOrDefaultAsync(p => p.Id == appt.PatientProfileId!.Value);
@@ -73,7 +74,7 @@ public class OrderService(ApplicationDbContext dbContext) : IOrderService
         else
         {
             cartItems = await dbContext.CartItems
-                .Include(ci => ci.Doctor)
+                .Include(ci => ci.Doctor).ThenInclude(d => d.Department)
                 .Include(ci => ci.PatientProfile)
                 .Where(ci => ci.UserId == userId)
                 .OrderBy(ci => ci.Id)
@@ -276,7 +277,7 @@ public class OrderService(ApplicationDbContext dbContext) : IOrderService
         }
 
         // 8. Tạo Order, OrderDetails và xóa CartItems trong CÙNG MỘT transaction
-        var totalAmount = cartItems.Sum(ci => ci.Doctor.ConsultationFee);
+        var totalAmount = cartItems.Sum(ci => ci.Doctor.Department.ConsultationFee);
 
         var order = new Order
         {
@@ -300,7 +301,7 @@ public class OrderService(ApplicationDbContext dbContext) : IOrderService
             AppointmentDate = ci.AppointmentDate,
             TimeSlot = ci.TimeSlot,
             QueueNumber = assignedQueueNumbers[ci.Id],
-            Fee = ci.Doctor.ConsultationFee,
+            Fee = ci.Doctor.Department.ConsultationFee,
             Note = ci.Note,
             Status = "Pending"
         }).ToList();

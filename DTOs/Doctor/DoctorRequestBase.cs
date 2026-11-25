@@ -40,10 +40,6 @@ public abstract class DoctorRequestBase : IValidatableObject
     [Range(0, 70, ErrorMessage = "Số năm kinh nghiệm phải từ 0 đến 70")]
     public int? ExperienceYears { get; set; }
 
-    [Required(ErrorMessage = "Vui lòng nhập phí khám")]
-    [Range(typeof(decimal), "0.01", "9999999999999999.99", ErrorMessage = "Phí khám phải lớn hơn 0 và không vượt quá giới hạn")]
-    public decimal? ConsultationFee { get; set; }
-
     [AllowedImage]
     public IFormFile? Image { get; set; }
 

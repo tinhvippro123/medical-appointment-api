@@ -12,7 +12,6 @@ public class Doctor : BaseEntity
     public string? Description { get; set; }
     public string? AvatarUrl { get; set; }
     public int ExperienceYears { get; set; }
-    public decimal ConsultationFee { get; set; }
     public bool IsActive { get; set; } = true;
 
     // Navigation

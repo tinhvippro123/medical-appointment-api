@@ -97,6 +97,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasKey(d => d.Id);
             entity.HasIndex(d => d.Name).IsUnique();
             entity.Property(d => d.Name).IsRequired().HasMaxLength(200);
+            entity.Property(d => d.ConsultationFee).HasColumnType("decimal(18,2)");
             entity.Property(d => d.IsActive).HasDefaultValue(true);
             });
 
@@ -119,7 +120,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasKey(d => d.Id);
             entity.Property(d => d.FullName).IsRequired().HasMaxLength(100);
             entity.Property(d => d.Qualification).HasMaxLength(100);
-            entity.Property(d => d.ConsultationFee).HasColumnType("decimal(18,2)");
             entity.Property(d => d.IsActive).HasDefaultValue(true);
 
             entity.HasOne(d => d.Department)

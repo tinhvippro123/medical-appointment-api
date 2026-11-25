@@ -6,6 +6,7 @@ public interface IAuthService
 {
     Task Register(RegisterRequest request);
     Task<string> Login(LoginRequest request);
-
     Task ChangePassword(int userId, ChangePasswordRequest request);
+    Task<string?> ForgotPassword(ForgotPasswordRequest request);
+    Task ResetPassword(ResetPasswordRequest request);
 }

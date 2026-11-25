@@ -13,6 +13,9 @@ public class ErrorCode(string code, string message)
     public static readonly ErrorCode PASSWORD_MISMATCH = new("PASSWORD_MISMATCH", "Mật khẩu xác nhận không khớp!");
     public static readonly ErrorCode WRONG_OLD_PASSWORD = new("WRONG_OLD_PASSWORD", "Mật khẩu cũ không chính xác!");
     public static readonly ErrorCode SAME_OLD_PASSWORD = new("SAME_OLD_PASSWORD", "Mật khẩu mới không được trùng với mật khẩu cũ!");
+    public static readonly ErrorCode EMAIL_NOT_FOUND = new("EMAIL_NOT_FOUND", "Không tìm thấy tài khoản nào gắn với địa chỉ email này!");
+    public static readonly ErrorCode INVALID_OR_EXPIRED_OTP = new("INVALID_OR_EXPIRED_OTP", "Mã OTP không chính xác hoặc đã hết hạn!");
+    public static readonly ErrorCode EMAIL_SEND_FAILED = new("EMAIL_SEND_FAILED", "Không thể gửi email mã xác thực lúc này, vui lòng thử lại sau!");
 
     // --- DEPARTMENT ---
     public static readonly ErrorCode DEPARTMENT_NOT_FOUND = new("DEPARTMENT_NOT_FOUND", "Không tìm thấy chuyên khoa!");

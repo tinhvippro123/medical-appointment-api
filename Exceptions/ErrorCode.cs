@@ -16,6 +16,7 @@ public class ErrorCode(string code, string message)
     public static readonly ErrorCode EMAIL_NOT_FOUND = new("EMAIL_NOT_FOUND", "Không tìm thấy tài khoản nào gắn với địa chỉ email này!");
     public static readonly ErrorCode INVALID_OR_EXPIRED_OTP = new("INVALID_OR_EXPIRED_OTP", "Mã OTP không chính xác hoặc đã hết hạn!");
     public static readonly ErrorCode EMAIL_SEND_FAILED = new("EMAIL_SEND_FAILED", "Không thể gửi email mã xác thực lúc này, vui lòng thử lại sau!");
+    public static readonly ErrorCode EMAIL_ALREADY_VERIFIED = new("EMAIL_ALREADY_VERIFIED", "Tài khoản này đã được xác thực email trước đó!");
 
     // --- DEPARTMENT ---
     public static readonly ErrorCode DEPARTMENT_NOT_FOUND = new("DEPARTMENT_NOT_FOUND", "Không tìm thấy chuyên khoa!");

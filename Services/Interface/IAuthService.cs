@@ -4,9 +4,11 @@ namespace MedicalAppointment.API.Services.Interface;
 
 public interface IAuthService
 {
-    Task Register(RegisterRequest request);
+    Task<RegisterResponse> Register(RegisterRequest request);
     Task<string> Login(LoginRequest request);
     Task ChangePassword(int userId, ChangePasswordRequest request);
     Task<string?> ForgotPassword(ForgotPasswordRequest request);
     Task ResetPassword(ResetPasswordRequest request);
+    Task VerifyEmail(VerifyEmailRequest request);
+    Task<string?> ResendVerificationOtp(ResendVerificationRequest request);
 }

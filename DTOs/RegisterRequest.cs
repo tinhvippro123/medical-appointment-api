@@ -12,6 +12,10 @@ public class RegisterRequest
     [RegularExpression(@"^0\d{9}$", ErrorMessage = "Số điện thoại phải gồm 10 chữ số và bắt đầu bằng số 0")]
     public string Phone { get; set; } = string.Empty;
 
+    [StringLength(100, ErrorMessage = "Email tối đa 100 ký tự")]
+    [EmailAddress(ErrorMessage = "Địa chỉ email không hợp lệ")]
+    public string? Email { get; set; }
+
     [Required(ErrorMessage = "Vui lòng nhập mật khẩu")]
     [StringLength(50, MinimumLength = 6, ErrorMessage = "Mật khẩu phải từ 6 đến 50 ký tự")]
     public string Password { get; set; } = string.Empty;

@@ -13,8 +13,8 @@ public class AuthController(IAuthService authService) : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterRequest request)
     {
-        await authService.Register(request);
-        return Ok(new { Message = "Đăng ký thành công." });
+        var response = await authService.Register(request);
+        return Ok(response);
     }
 
     [HttpPost("login")]
@@ -64,5 +64,28 @@ public class AuthController(IAuthService authService) : ControllerBase
     {
         await authService.ResetPassword(request);
         return Ok(new { message = "Đặt lại mật khẩu thành công! Vui lòng đăng nhập bằng mật khẩu mới." });
+    }
+
+    [HttpPost("verify-email")]
+    public async Task<IActionResult> VerifyEmail(VerifyEmailRequest request)
+    {
+        await authService.VerifyEmail(request);
+        return Ok(new { message = "Xác thực email thành công! Tài khoản của bạn đã được kích hoạt." });
+    }
+
+    [HttpPost("resend-verify-email")]
+    public async Task<IActionResult> ResendVerifyEmail(ResendVerificationRequest request)
+    {
+        var devOtp = await authService.ResendVerificationOtp(request);
+        if (!string.IsNullOrEmpty(devOtp))
+        {
+            return Ok(new
+            {
+                message = "Đã gửi lại mã OTP xác thực tới email của bạn.",
+                devOtp
+            });
+        }
+
+        return Ok(new { message = "Đã gửi lại mã OTP xác thực tới email của bạn." });
     }
 }

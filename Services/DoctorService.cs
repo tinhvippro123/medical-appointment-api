@@ -244,7 +244,7 @@ public class DoctorService : IDoctorService
         await ValidateEmailUniqueAsync(request.Email, excludeDoctorId: null);
 
         // Lưu ảnh (nếu có)
-        string? avatarUrl = null;
+        var avatarUrl = string.IsNullOrWhiteSpace(request.AvatarUrl) ? null : request.AvatarUrl.Trim();
         if (request.Image != null)
         {
             avatarUrl = await _imageHelper.SaveImageAsync(request.Image, "doctors");
@@ -276,7 +276,7 @@ public class DoctorService : IDoctorService
         catch
         {
             // Nếu lưu DB lỗi, xóa ảnh vừa tạo (không để file rác)
-            if (avatarUrl != null)
+            if (request.Image != null && avatarUrl != null)
             {
                 _imageHelper.DeleteImage(avatarUrl);
             }
@@ -324,7 +324,7 @@ public class DoctorService : IDoctorService
         await ValidateEmailUniqueAsync(request.Email, excludeDoctorId: id);
 
         // Xử lý ảnh
-        string? newAvatarUrl = null;
+        var newAvatarUrl = string.IsNullOrWhiteSpace(request.AvatarUrl) ? null : request.AvatarUrl.Trim();
         var oldAvatarUrl = doctor.AvatarUrl;
 
         if (request.Image != null)
@@ -359,7 +359,7 @@ public class DoctorService : IDoctorService
         catch
         {
             // Nếu lưu DB lỗi, xóa ảnh mới vừa tạo
-            if (newAvatarUrl != null)
+            if (request.Image != null && newAvatarUrl != null)
             {
                 _imageHelper.DeleteImage(newAvatarUrl);
             }
@@ -367,7 +367,9 @@ public class DoctorService : IDoctorService
         }
 
         // Lưu DB thành công → xóa ảnh cũ (nếu có ảnh mới thay thế)
-        if (newAvatarUrl != null && !string.IsNullOrWhiteSpace(oldAvatarUrl))
+        if (newAvatarUrl != null && oldAvatarUrl != null
+            && oldAvatarUrl.StartsWith("/images/doctors/", StringComparison.OrdinalIgnoreCase)
+            && !await _context.Doctors.AnyAsync(d => d.AvatarUrl == oldAvatarUrl))
         {
             _imageHelper.DeleteImage(oldAvatarUrl);
         }

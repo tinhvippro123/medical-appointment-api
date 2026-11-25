@@ -42,13 +42,43 @@ public class OrderService(ApplicationDbContext dbContext) : IOrderService
         // 1. Mở transaction Serializable TRƯỚC khi đọc dữ liệu
         await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable);
 
-        // 2. Đọc CartItems BÊN TRONG transaction
-        var cartItems = await dbContext.CartItems
-            .Include(ci => ci.Doctor)
-            .Include(ci => ci.PatientProfile)
-            .Where(ci => ci.UserId == userId)
-            .OrderBy(ci => ci.Id)
-            .ToListAsync();
+        // 2. Đọc CartItems BÊN TRONG transaction (hoặc dựng từ request.Appointment khi đặt lịch trực tiếp)
+        List<CartItem> cartItems;
+        var isDirectAppointment = request.Appointment != null;
+
+        if (isDirectAppointment)
+        {
+            var appt = request.Appointment!;
+            var doctor = await dbContext.Doctors
+                .FirstOrDefaultAsync(d => d.Id == appt.DoctorId!.Value);
+            var profile = await dbContext.PatientProfiles
+                .FirstOrDefaultAsync(p => p.Id == appt.PatientProfileId!.Value);
+
+            cartItems =
+            [
+                new CartItem
+                {
+                    Id = 0,
+                    UserId = userId,
+                    DoctorId = appt.DoctorId!.Value,
+                    Doctor = doctor!,
+                    PatientProfileId = appt.PatientProfileId!.Value,
+                    PatientProfile = profile!,
+                    AppointmentDate = appt.AppointmentDate!.Value.ToDateTime(TimeOnly.MinValue),
+                    TimeSlot = appt.TimeSlot.Trim(),
+                    Note = string.IsNullOrWhiteSpace(appt.Note) ? null : appt.Note.Trim()
+                }
+            ];
+        }
+        else
+        {
+            cartItems = await dbContext.CartItems
+                .Include(ci => ci.Doctor)
+                .Include(ci => ci.PatientProfile)
+                .Where(ci => ci.UserId == userId)
+                .OrderBy(ci => ci.Id)
+                .ToListAsync();
+        }
 
         if (cartItems.Count == 0)
         {
@@ -276,7 +306,10 @@ public class OrderService(ApplicationDbContext dbContext) : IOrderService
         }).ToList();
 
         dbContext.OrderDetails.AddRange(orderDetails);
-        dbContext.CartItems.RemoveRange(cartItems);
+        if (!isDirectAppointment)
+        {
+            dbContext.CartItems.RemoveRange(cartItems);
+        }
 
         await dbContext.SaveChangesAsync();
         await transaction.CommitAsync();

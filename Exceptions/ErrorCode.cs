@@ -64,6 +64,9 @@ public class ErrorCode(string code, string message)
     public static readonly ErrorCode PATIENT_SCHEDULE_CONFLICT = new("PATIENT_SCHEDULE_CONFLICT", "Bệnh nhân đã có lịch khám trong khung giờ này!");
     public static readonly ErrorCode CHECKOUT_CONFLICT = new("CHECKOUT_CONFLICT", "Giỏ hàng vừa thay đổi hoặc hệ thống đang bận, vui lòng thử lại!");
     public static readonly ErrorCode DOCTOR_UNAVAILABLE = new("DOCTOR_UNAVAILABLE", "Bác sĩ hiện không nhận lịch khám!");
+    public static readonly ErrorCode ORDER_ALREADY_PAID = new("ORDER_ALREADY_PAID", "Đơn đặt lịch này đã được thanh toán!");
+    public static readonly ErrorCode ORDER_CANCELLED_CANNOT_PAY = new("ORDER_CANCELLED_CANNOT_PAY", "Đơn đặt lịch đã hủy, không thể thanh toán!");
+    public static readonly ErrorCode INVALID_PAYMENT_SIGNATURE = new("INVALID_PAYMENT_SIGNATURE", "Chữ ký xác thực giao dịch thanh toán không hợp lệ!");
 
     // --- GENERAL ---
     public static readonly ErrorCode RESOURCE_NOT_FOUND = new("RESOURCE_NOT_FOUND", "Không tìm thấy tài nguyên yêu cầu!");

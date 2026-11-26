@@ -11,4 +11,8 @@ public interface IAuthService
     Task ResetPassword(ResetPasswordRequest request);
     Task VerifyEmail(VerifyEmailRequest request);
     Task<string?> ResendVerificationOtp(ResendVerificationRequest request);
+    Task VerifyCurrentPassword(int userId, string password);
+    Task<MyProfileResponse> GetMyProfile(int userId);
+    Task<UpdateMyProfileResponse> UpdateMyProfile(int userId, UpdateMyProfileRequest request);
+    Task<SocialLoginResponse> SocialLogin(SocialLoginRequest request);
 }

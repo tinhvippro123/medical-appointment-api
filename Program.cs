@@ -21,6 +21,7 @@ builder.Services.AddCors(options => options.AddPolicy("LocalDevelopment", policy
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
+builder.Services.AddHttpClient();
 
 // --- Dependency Injection ---
 builder.Services.AddSingleton<IOtpService, OtpService>();

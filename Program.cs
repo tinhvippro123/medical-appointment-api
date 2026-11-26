@@ -88,16 +88,17 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-// Tự động chạy Migration khi khởi động server
+// Tự động chạy Migration và nạp dữ liệu mẫu ban đầu khi khởi động server
 try
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     db.Database.Migrate();
+    DbSeeder.Seed(db);
 }
 catch (Exception ex)
 {
-    app.Logger.LogWarning(ex, "Could not apply migrations automatically.");
+    app.Logger.LogWarning(ex, "Could not apply migrations or seed initial data automatically.");
 }
 
 app.MapControllers();

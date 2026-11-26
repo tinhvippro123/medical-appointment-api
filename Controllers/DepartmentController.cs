@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MedicalAppointment.API.DTOs.Department;
 using MedicalAppointment.API.Services.Interface;
@@ -34,32 +35,36 @@ public class DepartmentController(IDepartmentService departmentService) : Contro
         return Ok(result);
     }
 
-    // POST /api/departments — Thêm mới 
+    // POST /api/departments — Thêm mới (ADMIN only)
     [HttpPost]
+    [Authorize(Roles = "ADMIN")]
     public async Task<IActionResult> Create(CreateDepartmentDto dto)
     {
         var department = await _departmentService.CreateAsync(dto);
         return CreatedAtAction(nameof(GetById), new { id = department.Id }, department);
     }
 
-    // PUT /api/departments/{id} — Sửa 
+    // PUT /api/departments/{id} — Sửa (ADMIN only)
     [HttpPut("{id}")]
+    [Authorize(Roles = "ADMIN")]
     public async Task<IActionResult> Update(int id,UpdateDepartmentDto dto)
     {
         var department = await _departmentService.UpdateAsync(id, dto);
         return Ok(department);
     }
 
-    // DELETE /api/departments/{id} — Xóa 
+    // DELETE /api/departments/{id} — Xóa (ADMIN only)
     [HttpDelete("{id}")]
+    [Authorize(Roles = "ADMIN")]
     public async Task<IActionResult> Delete(int id)
     {
         await _departmentService.DeleteAsync(id);
         return NoContent();
     }
 
-    // POST /api/departments/{id}/image — Upload ảnh chuyên khoa
+    // POST /api/departments/{id}/image — Upload ảnh chuyên khoa (ADMIN only)
     [HttpPost("{id}/image")]
+    [Authorize(Roles = "ADMIN")]
     [Consumes("multipart/form-data")]
     [RequestSizeLimit(6 * 1024 * 1024)]
     public async Task<IActionResult> UploadImage(int id, [FromForm] IFormFile file)
@@ -70,14 +75,16 @@ public class DepartmentController(IDepartmentService departmentService) : Contro
 
     // Gallery và camera gửi file vào endpoint trên; URL gửi JSON vào endpoint này.
     [HttpPost("{id}/image/url")]
+    [Authorize(Roles = "ADMIN")]
     public async Task<IActionResult> SetImageUrl(int id, [FromBody] DepartmentImageUrlDto dto)
     {
         var department = await _departmentService.SetImageUrlAsync(id, dto.ImageUrl);
         return Ok(department);
     }
 
-    // DELETE /api/departments/{id}/image — Xóa ảnh chuyên khoa
+    // DELETE /api/departments/{id}/image — Xóa ảnh chuyên khoa (ADMIN only)
     [HttpDelete("{id}/image")]
+    [Authorize(Roles = "ADMIN")]
     public async Task<IActionResult> DeleteImage(int id)
     {
         var department = await _departmentService.DeleteImageAsync(id);

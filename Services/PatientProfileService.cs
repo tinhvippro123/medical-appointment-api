@@ -14,6 +14,7 @@ public class PatientProfileService(ApplicationDbContext context) : IPatientProfi
     public async Task<IEnumerable<PatientProfileResponse>> GetAllByUserIdAsync(int userId)
     {
         return await _context.PatientProfiles
+            .AsNoTracking()
             .Where(p => p.UserId == userId)
             .OrderBy(p => p.Id)
             .Select(p => new PatientProfileResponse

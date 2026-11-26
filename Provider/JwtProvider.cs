@@ -6,7 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace MedicalAppointment.API.Provider;
 
-public class JwtProvider(IConfiguration config) : IJwtProvider
+public class JwtProvider(IConfiguration config, IHostEnvironment hostEnvironment) : IJwtProvider
 {
     public string GenerateToken(User user)
     {
@@ -17,14 +17,27 @@ public class JwtProvider(IConfiguration config) : IJwtProvider
             new Claim(ClaimTypes.Role, user.Role.Key)
         };
         
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"]!));
+        var jwtKey = config["Jwt:Key"];
+        if (string.IsNullOrWhiteSpace(jwtKey))
+        {
+            if (hostEnvironment.IsDevelopment())
+            {
+                jwtKey = "DevOnly_MedicalApp_LocalSigningKey_2026_ChangeInProduction!";
+            }
+            else
+            {
+                throw new InvalidOperationException("Chưa cấu hình khóa bí mật Jwt:Key.");
+            }
+        }
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
             issuer: config["Jwt:Issuer"],
             audience: config["Jwt:Audience"],
             claims: claims,
-            expires: DateTime.Now.AddDays(7),
+            expires: DateTime.UtcNow.AddDays(7),
             signingCredentials: creds
         );
 

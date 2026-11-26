@@ -1,18 +1,51 @@
+using System.Text;
+using System.Threading.RateLimiting;
 using MedicalAppointment.API.Data;
+using MedicalAppointment.API.Entities;
+using MedicalAppointment.API.Exceptions;
 using MedicalAppointment.API.Middlewares;
 using MedicalAppointment.API.Provider;
 using MedicalAppointment.API.Services;
 using MedicalAppointment.API.Services.Interface;
-using Microsoft.EntityFrameworkCore;
-using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
+
+// Rate limiting bảo vệ các endpoint xác thực khỏi brute-force / spam OTP
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        await context.HttpContext.Response.WriteAsJsonAsync(new ErrorDetails
+        {
+            StatusCode = StatusCodes.Status429TooManyRequests,
+            ErrorCode = ErrorCode.TOO_MANY_REQUESTS.Code,
+            Message = ErrorCode.TOO_MANY_REQUESTS.Message
+        }, cancellationToken);
+    };
+
+    options.AddPolicy("auth", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 30,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            }));
+});
 
 // CORS cho Local Development
 builder.Services.AddCors(options => options.AddPolicy("LocalDevelopment", policy =>
@@ -47,6 +80,19 @@ builder.Services.AddSingleton<MedicalAppointment.API.Helpers.ImageStorageHelper>
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+var jwtKey = builder.Configuration["Jwt:Key"];
+if (string.IsNullOrWhiteSpace(jwtKey))
+{
+    if (builder.Environment.IsDevelopment())
+    {
+        jwtKey = "DevOnly_MedicalApp_LocalSigningKey_2026_ChangeInProduction!";
+    }
+    else
+    {
+        throw new InvalidOperationException("Chưa cấu hình Jwt:Key trong UserSecrets hoặc biến môi trường.");
+    }
+}
+
 // Cấu hình JWT Authentication
 builder.Services.AddAuthentication(options =>
 {
@@ -64,7 +110,7 @@ builder.Services.AddAuthentication(options =>
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+            Encoding.UTF8.GetBytes(jwtKey))
     };
 });
 
@@ -79,6 +125,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseStaticFiles(); // Phục vụ file ảnh từ wwwroot
 
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -86,6 +133,8 @@ app.UseAuthorization();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 // Tự động chạy Migration và nạp dữ liệu mẫu ban đầu khi khởi động server

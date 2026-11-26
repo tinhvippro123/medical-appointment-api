@@ -60,6 +60,16 @@ public class RoomService(ApplicationDbContext context) : IRoomService
     {
         var room = await FindRoomAsync(id);
         room.IsActive = false;
+
+        // Gỡ phòng khỏi các bác sĩ đang trỏ tới phòng bị xóa mềm
+        var assignedDoctors = await _context.Doctors
+            .Where(d => d.RoomId == id)
+            .ToListAsync();
+        foreach (var doctor in assignedDoctors)
+        {
+            doctor.RoomId = null;
+        }
+
         await _context.SaveChangesAsync();
     }
 

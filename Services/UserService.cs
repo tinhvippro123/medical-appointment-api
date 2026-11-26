@@ -15,7 +15,6 @@ public class UserService(ApplicationDbContext context, IPasswordHasher passwordH
     {
         var baseQuery = context.Users
             .AsNoTracking()
-            .Include(u => u.Role)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(query.Keyword))
@@ -38,17 +37,34 @@ public class UserService(ApplicationDbContext context, IPasswordHasher passwordH
         }
 
         var totalCount = await baseQuery.CountAsync();
+        long skip = ((long)query.Page - 1) * query.PageSize;
 
-        var users = await baseQuery
-            .OrderByDescending(u => u.CreatedAt)
-            .ThenByDescending(u => u.Id)
-            .Skip((query.Page - 1) * query.PageSize)
-            .Take(query.PageSize)
-            .ToListAsync();
+        var items = skip >= totalCount
+            ? new List<UserResponse>()
+            : await baseQuery
+                .OrderByDescending(u => u.CreatedAt)
+                .ThenByDescending(u => u.Id)
+                .Skip((int)skip)
+                .Take(query.PageSize)
+                .Select(u => new UserResponse
+                {
+                    Id = u.Id,
+                    FullName = u.FullName,
+                    Email = u.Email,
+                    Phone = u.Phone,
+                    AvatarUrl = u.AvatarUrl,
+                    RoleId = u.RoleId,
+                    RoleKey = u.Role != null ? u.Role.Key : string.Empty,
+                    RoleName = u.Role != null ? u.Role.Name : string.Empty,
+                    IsActive = u.IsActive,
+                    CreatedAt = u.CreatedAt,
+                    UpdatedAt = u.UpdatedAt
+                })
+                .ToListAsync();
 
         return new PagedResult<UserResponse>
         {
-            Items = users.Select(MapToResponse).ToList(),
+            Items = items,
             TotalCount = totalCount,
             Page = query.Page,
             PageSize = query.PageSize
@@ -59,15 +75,29 @@ public class UserService(ApplicationDbContext context, IPasswordHasher passwordH
     {
         var user = await context.Users
             .AsNoTracking()
-            .Include(u => u.Role)
-            .FirstOrDefaultAsync(u => u.Id == id);
+            .Where(u => u.Id == id)
+            .Select(u => new UserResponse
+            {
+                Id = u.Id,
+                FullName = u.FullName,
+                Email = u.Email,
+                Phone = u.Phone,
+                AvatarUrl = u.AvatarUrl,
+                RoleId = u.RoleId,
+                RoleKey = u.Role != null ? u.Role.Key : string.Empty,
+                RoleName = u.Role != null ? u.Role.Name : string.Empty,
+                IsActive = u.IsActive,
+                CreatedAt = u.CreatedAt,
+                UpdatedAt = u.UpdatedAt
+            })
+            .FirstOrDefaultAsync();
 
         if (user == null)
         {
             throw new NotFoundException(ErrorCode.USER_NOT_FOUND);
         }
 
-        return MapToResponse(user);
+        return user;
     }
 
     public async Task<UserResponse> CreateAsync(CreateUserRequest request)

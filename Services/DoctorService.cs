@@ -23,27 +23,41 @@ public class DoctorService : IDoctorService
     public async Task<PagedResult<DoctorResponse>> GetAllAsync(DoctorQueryParameters query)
     {
         var baseQuery = _context.Doctors
-            .Where(d => d.IsActive)
-            .Include(d => d.Department)
-            .Include(d => d.Room)
+            .AsNoTracking()
+            .Where(d => d.IsActive && d.Department.IsActive)
             .OrderByDescending(d => d.CreatedAt)
-            .ThenByDescending(d => d.Id)
-            .AsNoTracking();
+            .ThenByDescending(d => d.Id);
 
         var totalCount = await baseQuery.CountAsync();
 
         // Tính bằng long để trang rất lớn không làm tràn số.
         long skip = ((long)query.Page - 1) * query.PageSize;
-        var doctorEntities = new List<Doctor>();
-        if (skip < totalCount)
-        {
-            doctorEntities = await baseQuery
+        var doctors = skip >= totalCount
+            ? new List<DoctorResponse>()
+            : await baseQuery
                 .Skip((int)skip)
                 .Take(query.PageSize)
+                .Select(d => new DoctorResponse
+                {
+                    Id = d.Id,
+                    FullName = d.FullName,
+                    Qualification = d.Qualification,
+                    Email = d.Email,
+                    Phone = d.Phone,
+                    DepartmentId = d.DepartmentId,
+                    DepartmentName = d.Department.Name,
+                    RoomId = d.Room != null && d.Room.IsActive ? d.RoomId : null,
+                    RoomNumber = d.Room != null && d.Room.IsActive ? d.Room.RoomNumber : null,
+                    Floor = d.Room != null && d.Room.IsActive ? d.Room.Floor : null,
+                    Description = d.Description,
+                    AvatarUrl = d.AvatarUrl,
+                    ExperienceYears = d.ExperienceYears,
+                    ConsultationFee = d.Department.ConsultationFee,
+                    IsActive = d.IsActive,
+                    CreatedAt = d.CreatedAt,
+                    UpdatedAt = d.UpdatedAt
+                })
                 .ToListAsync();
-        }
-
-        var doctors = doctorEntities.Select(MapToResponse).ToList();
 
         return new PagedResult<DoctorResponse>
         {
@@ -58,7 +72,7 @@ public class DoctorService : IDoctorService
     {
         var doctor = await _context.Doctors
             .AsNoTracking()
-            .Where(d => d.Id == id && d.IsActive)
+            .Where(d => d.Id == id && d.IsActive && d.Department.IsActive)
             .Select(d => new DoctorDetailResponse
             {
                 Id = d.Id,
@@ -68,9 +82,9 @@ public class DoctorService : IDoctorService
                 Phone = d.Phone,
                 DepartmentId = d.DepartmentId,
                 DepartmentName = d.Department.Name,
-                RoomId = d.RoomId,
-                RoomNumber = d.Room != null ? d.Room.RoomNumber : null,
-                Floor = d.Room != null ? d.Room.Floor : null,
+                RoomId = d.Room != null && d.Room.IsActive ? d.RoomId : null,
+                RoomNumber = d.Room != null && d.Room.IsActive ? d.Room.RoomNumber : null,
+                Floor = d.Room != null && d.Room.IsActive ? d.Room.Floor : null,
                 Description = d.Description,
                 AvatarUrl = d.AvatarUrl,
                 ExperienceYears = d.ExperienceYears,
@@ -107,47 +121,50 @@ public class DoctorService : IDoctorService
         var baseDoctorInfo = await _context.Doctors
             .AsNoTracking()
             .Where(d => d.Id == id)
-            .Select(d => new { d.DepartmentId, d.IsActive })
+            .Select(d => new { d.DepartmentId, d.IsActive, DepartmentIsActive = d.Department.IsActive })
             .FirstOrDefaultAsync();
 
-        if (baseDoctorInfo == null || !baseDoctorInfo.IsActive)
+        if (baseDoctorInfo == null || !baseDoctorInfo.IsActive || !baseDoctorInfo.DepartmentIsActive)
         {
             throw new NotFoundException(ErrorCode.DOCTOR_NOT_FOUND);
         }
 
         var relatedQuery = _context.Doctors
             .AsNoTracking()
-            .Where(d => d.DepartmentId == baseDoctorInfo.DepartmentId && d.Id != id && d.IsActive);
+            .Where(d => d.DepartmentId == baseDoctorInfo.DepartmentId && d.Id != id && d.IsActive && d.Department.IsActive);
 
         // Đếm tổng số lượng trước khi phân trang
         var totalCount = await relatedQuery.CountAsync();
+        long skip = ((long)query.Page - 1) * query.PageSize;
 
         // Sắp xếp theo Id rồi phân trang và chiếu sang DoctorResponse
-        var items = await relatedQuery
-            .OrderBy(d => d.Id)
-            .Skip((query.Page - 1) * query.PageSize)
-            .Take(query.PageSize)
-            .Select(d => new DoctorResponse
-            {
-                Id = d.Id,
-                FullName = d.FullName,
-                Qualification = d.Qualification,
-                Email = d.Email,
-                Phone = d.Phone,
-                DepartmentId = d.DepartmentId,
-                DepartmentName = d.Department.Name,
-                RoomId = d.RoomId,
-                RoomNumber = d.Room != null ? d.Room.RoomNumber : null,
-                Floor = d.Room != null ? d.Room.Floor : null,
-                Description = d.Description,
-                AvatarUrl = d.AvatarUrl,
-                ExperienceYears = d.ExperienceYears,
-                ConsultationFee = d.Department.ConsultationFee,
-                IsActive = d.IsActive,
-                CreatedAt = d.CreatedAt,
-                UpdatedAt = d.UpdatedAt
-            })
-            .ToListAsync();
+        var items = skip >= totalCount
+            ? new List<DoctorResponse>()
+            : await relatedQuery
+                .OrderBy(d => d.Id)
+                .Skip((int)skip)
+                .Take(query.PageSize)
+                .Select(d => new DoctorResponse
+                {
+                    Id = d.Id,
+                    FullName = d.FullName,
+                    Qualification = d.Qualification,
+                    Email = d.Email,
+                    Phone = d.Phone,
+                    DepartmentId = d.DepartmentId,
+                    DepartmentName = d.Department.Name,
+                    RoomId = d.Room != null && d.Room.IsActive ? d.RoomId : null,
+                    RoomNumber = d.Room != null && d.Room.IsActive ? d.Room.RoomNumber : null,
+                    Floor = d.Room != null && d.Room.IsActive ? d.Room.Floor : null,
+                    Description = d.Description,
+                    AvatarUrl = d.AvatarUrl,
+                    ExperienceYears = d.ExperienceYears,
+                    ConsultationFee = d.Department.ConsultationFee,
+                    IsActive = d.IsActive,
+                    CreatedAt = d.CreatedAt,
+                    UpdatedAt = d.UpdatedAt
+                })
+                .ToListAsync();
 
         return new PagedResult<DoctorResponse>
         {
@@ -162,7 +179,7 @@ public class DoctorService : IDoctorService
     {
         var baseQuery = _context.Doctors
             .AsNoTracking()
-            .Where(d => d.IsActive);
+            .Where(d => d.IsActive && d.Department.IsActive);
 
         // Lọc theo keyword nếu có (đã Trim, bỏ qua nếu null hoặc chỉ có khoảng trắng)
         if (!string.IsNullOrWhiteSpace(query.Keyword))
@@ -179,33 +196,36 @@ public class DoctorService : IDoctorService
 
         // Đếm tổng số lượng thỏa mãn điều kiện trước khi phân trang
         var totalCount = await baseQuery.CountAsync();
+        long skip = ((long)query.Page - 1) * query.PageSize;
 
         // Sắp xếp theo Id tăng dần, phân trang Skip/Take và chiếu sang DoctorResponse (1 truy vấn, không N+1)
-        var items = await baseQuery
-            .OrderBy(d => d.Id)
-            .Skip((query.Page - 1) * query.PageSize)
-            .Take(query.PageSize)
-            .Select(d => new DoctorResponse
-            {
-                Id = d.Id,
-                FullName = d.FullName,
-                Qualification = d.Qualification,
-                Email = d.Email,
-                Phone = d.Phone,
-                DepartmentId = d.DepartmentId,
-                DepartmentName = d.Department.Name,
-                RoomId = d.RoomId,
-                RoomNumber = d.Room != null ? d.Room.RoomNumber : null,
-                Floor = d.Room != null ? d.Room.Floor : null,
-                Description = d.Description,
-                AvatarUrl = d.AvatarUrl,
-                ExperienceYears = d.ExperienceYears,
-                ConsultationFee = d.Department.ConsultationFee,
-                IsActive = d.IsActive,
-                CreatedAt = d.CreatedAt,
-                UpdatedAt = d.UpdatedAt
-            })
-            .ToListAsync();
+        var items = skip >= totalCount
+            ? new List<DoctorResponse>()
+            : await baseQuery
+                .OrderBy(d => d.Id)
+                .Skip((int)skip)
+                .Take(query.PageSize)
+                .Select(d => new DoctorResponse
+                {
+                    Id = d.Id,
+                    FullName = d.FullName,
+                    Qualification = d.Qualification,
+                    Email = d.Email,
+                    Phone = d.Phone,
+                    DepartmentId = d.DepartmentId,
+                    DepartmentName = d.Department.Name,
+                    RoomId = d.Room != null && d.Room.IsActive ? d.RoomId : null,
+                    RoomNumber = d.Room != null && d.Room.IsActive ? d.Room.RoomNumber : null,
+                    Floor = d.Room != null && d.Room.IsActive ? d.Room.Floor : null,
+                    Description = d.Description,
+                    AvatarUrl = d.AvatarUrl,
+                    ExperienceYears = d.ExperienceYears,
+                    ConsultationFee = d.Department.ConsultationFee,
+                    IsActive = d.IsActive,
+                    CreatedAt = d.CreatedAt,
+                    UpdatedAt = d.UpdatedAt
+                })
+                .ToListAsync();
 
         return new PagedResult<DoctorResponse>
         {

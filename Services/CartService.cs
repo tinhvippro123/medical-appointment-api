@@ -13,10 +13,10 @@ public class CartService(ApplicationDbContext dbContext) : ICartService
     {
         var doctorExists = await dbContext.Doctors
             .AsNoTracking()
-            .AnyAsync(d => d.Id == request.DoctorId!.Value && d.IsActive);
+            .AnyAsync(d => d.Id == request.DoctorId!.Value && d.IsActive && d.Department.IsActive);
         if (!doctorExists)
         {
-            throw new BadRequestException(ErrorCode.DOCTOR_NOT_FOUND);
+            throw new NotFoundException(ErrorCode.DOCTOR_NOT_FOUND);
         }
 
         var profileExists = await dbContext.PatientProfiles
@@ -28,12 +28,10 @@ public class CartService(ApplicationDbContext dbContext) : ICartService
         }
 
         var appointmentDate = request.AppointmentDate!.Value;
-        var dayOfWeek = (int)appointmentDate.DayOfWeek;
         var cleanSlot = request.TimeSlot.Trim();
-        var parts = cleanSlot.Split('-');
-        var slotStart = TimeSpan.Parse(parts[0]);
-        var slotEnd = TimeSpan.Parse(parts[1]);
+        var (slotStart, slotEnd) = ParseAndValidateSlot(appointmentDate, cleanSlot);
 
+        var dayOfWeek = (int)appointmentDate.DayOfWeek;
         var hasValidSchedule = await dbContext.DoctorSchedules
             .AsNoTracking()
             .AnyAsync(s => s.DoctorId == request.DoctorId!.Value &&
@@ -46,16 +44,39 @@ public class CartService(ApplicationDbContext dbContext) : ICartService
         }
 
         var apptDateTime = appointmentDate.ToDateTime(TimeOnly.MinValue);
-        var isDuplicate = await dbContext.CartItems
+        var startOfDay = apptDateTime.Date;
+        var endOfDay = startOfDay.AddDays(1);
+
+        var isOnLeave = await dbContext.DoctorDayOffs
             .AsNoTracking()
-            .AnyAsync(ci => ci.UserId == userId &&
-                            ci.DoctorId == request.DoctorId!.Value &&
-                            ci.PatientProfileId == request.PatientProfileId!.Value &&
-                            ci.AppointmentDate == apptDateTime &&
-                            ci.TimeSlot == cleanSlot);
-        if (isDuplicate)
+            .AnyAsync(ddo => ddo.DoctorId == request.DoctorId!.Value &&
+                             ddo.Date >= startOfDay &&
+                             ddo.Date < endOfDay);
+        if (isOnLeave)
         {
-            throw new BadRequestException(ErrorCode.CART_ITEM_DUPLICATE);
+            throw new BadRequestException(ErrorCode.DOCTOR_ON_LEAVE);
+        }
+
+        var existingCartItems = await dbContext.CartItems
+            .AsNoTracking()
+            .Where(ci => ci.UserId == userId &&
+                         ci.PatientProfileId == request.PatientProfileId!.Value &&
+                         ci.AppointmentDate == apptDateTime)
+            .Select(ci => new { ci.DoctorId, ci.TimeSlot })
+            .ToListAsync();
+
+        foreach (var existing in existingCartItems)
+        {
+            if (existing.DoctorId == request.DoctorId!.Value && existing.TimeSlot == cleanSlot)
+            {
+                throw new BadRequestException(ErrorCode.CART_ITEM_DUPLICATE);
+            }
+
+            if (TryParseSlot(existing.TimeSlot, out var exStart, out var exEnd) &&
+                slotStart < exEnd && slotEnd > exStart)
+            {
+                throw new BadRequestException(ErrorCode.PATIENT_SCHEDULE_CONFLICT);
+            }
         }
 
         var cartItem = new CartItem
@@ -123,24 +144,23 @@ public class CartService(ApplicationDbContext dbContext) : ICartService
     {
         var cartItem = await dbContext.CartItems
             .Include(ci => ci.Doctor)
+                .ThenInclude(d => d.Department)
             .FirstOrDefaultAsync(ci => ci.Id == cartItemId && ci.UserId == userId);
         if (cartItem == null)
         {
             throw new NotFoundException(ErrorCode.RESOURCE_NOT_FOUND);
         }
 
-        if (!cartItem.Doctor.IsActive)
+        if (!cartItem.Doctor.IsActive || !cartItem.Doctor.Department.IsActive)
         {
-            throw new BadRequestException(ErrorCode.DOCTOR_NOT_FOUND);
+            throw new NotFoundException(ErrorCode.DOCTOR_NOT_FOUND);
         }
 
         var appointmentDate = request.AppointmentDate!.Value;
-        var dayOfWeek = (int)appointmentDate.DayOfWeek;
         var cleanSlot = request.TimeSlot.Trim();
-        var parts = cleanSlot.Split('-');
-        var slotStart = TimeSpan.Parse(parts[0]);
-        var slotEnd = TimeSpan.Parse(parts[1]);
+        var (slotStart, slotEnd) = ParseAndValidateSlot(appointmentDate, cleanSlot);
 
+        var dayOfWeek = (int)appointmentDate.DayOfWeek;
         var hasValidSchedule = await dbContext.DoctorSchedules
             .AsNoTracking()
             .AnyAsync(s => s.DoctorId == cartItem.DoctorId &&
@@ -153,17 +173,40 @@ public class CartService(ApplicationDbContext dbContext) : ICartService
         }
 
         var apptDateTime = appointmentDate.ToDateTime(TimeOnly.MinValue);
-        var isDuplicate = await dbContext.CartItems
+        var startOfDay = apptDateTime.Date;
+        var endOfDay = startOfDay.AddDays(1);
+
+        var isOnLeave = await dbContext.DoctorDayOffs
             .AsNoTracking()
-            .AnyAsync(ci => ci.Id != cartItemId &&
-                            ci.UserId == userId &&
-                            ci.DoctorId == cartItem.DoctorId &&
-                            ci.PatientProfileId == cartItem.PatientProfileId &&
-                            ci.AppointmentDate == apptDateTime &&
-                            ci.TimeSlot == cleanSlot);
-        if (isDuplicate)
+            .AnyAsync(ddo => ddo.DoctorId == cartItem.DoctorId &&
+                             ddo.Date >= startOfDay &&
+                             ddo.Date < endOfDay);
+        if (isOnLeave)
         {
-            throw new BadRequestException(ErrorCode.CART_ITEM_DUPLICATE);
+            throw new BadRequestException(ErrorCode.DOCTOR_ON_LEAVE);
+        }
+
+        var otherCartItems = await dbContext.CartItems
+            .AsNoTracking()
+            .Where(ci => ci.Id != cartItemId &&
+                         ci.UserId == userId &&
+                         ci.PatientProfileId == cartItem.PatientProfileId &&
+                         ci.AppointmentDate == apptDateTime)
+            .Select(ci => new { ci.DoctorId, ci.TimeSlot })
+            .ToListAsync();
+
+        foreach (var existing in otherCartItems)
+        {
+            if (existing.DoctorId == cartItem.DoctorId && existing.TimeSlot == cleanSlot)
+            {
+                throw new BadRequestException(ErrorCode.CART_ITEM_DUPLICATE);
+            }
+
+            if (TryParseSlot(existing.TimeSlot, out var exStart, out var exEnd) &&
+                slotStart < exEnd && slotEnd > exStart)
+            {
+                throw new BadRequestException(ErrorCode.PATIENT_SCHEDULE_CONFLICT);
+            }
         }
 
         cartItem.AppointmentDate = apptDateTime;
@@ -214,5 +257,33 @@ public class CartService(ApplicationDbContext dbContext) : ICartService
             .CountAsync(ci => ci.UserId == userId);
 
         return new CartCountResponse { Count = count };
+    }
+
+    private static (TimeSpan Start, TimeSpan End) ParseAndValidateSlot(DateOnly appointmentDate, string timeSlot)
+    {
+        if (!TryParseSlot(timeSlot, out var start, out var end))
+        {
+            throw new BadRequestException(ErrorCode.INVALID_TIME_SLOT);
+        }
+
+        var nowVn = DateTime.UtcNow.AddHours(7);
+        var todayVn = DateOnly.FromDateTime(nowVn);
+        if (appointmentDate < todayVn || (appointmentDate == todayVn && start <= nowVn.TimeOfDay))
+        {
+            throw new BadRequestException(ErrorCode.APPOINTMENT_TIME_PASSED);
+        }
+
+        return (start, end);
+    }
+
+    private static bool TryParseSlot(string timeSlot, out TimeSpan start, out TimeSpan end)
+    {
+        start = default;
+        end = default;
+        var parts = timeSlot.Trim().Split('-');
+        return parts.Length == 2 &&
+               TimeSpan.TryParse(parts[0].Trim(), out start) &&
+               TimeSpan.TryParse(parts[1].Trim(), out end) &&
+               start < end;
     }
 }

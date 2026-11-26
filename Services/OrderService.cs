@@ -97,8 +97,8 @@ public class OrderService(ApplicationDbContext dbContext) : IOrderService
         // 4. Kiểm tra điều kiện cơ bản của từng CartItem
         foreach (var item in cartItems)
         {
-            // Bác sĩ tồn tại và còn hoạt động
-            if (item.Doctor == null || !item.Doctor.IsActive)
+            // Bác sĩ và chuyên khoa tồn tại và còn hoạt động
+            if (item.Doctor == null || !item.Doctor.IsActive || item.Doctor.Department == null || !item.Doctor.Department.IsActive)
             {
                 throw new BadRequestException(ErrorCode.DOCTOR_UNAVAILABLE);
             }
@@ -400,6 +400,12 @@ public class OrderService(ApplicationDbContext dbContext) : IOrderService
             throw new BadRequestException(ErrorCode.ORDER_ALREADY_PAID);
         }
 
+        if (!string.Equals(order.Status, "Pending", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(order.PaymentMethod, "Cash", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new BadRequestException(ErrorCode.CANNOT_DISCARD_ORDER);
+        }
+
         dbContext.OrderDetails.RemoveRange(order.OrderDetails);
         dbContext.Orders.Remove(order);
         await dbContext.SaveChangesAsync();
@@ -457,7 +463,14 @@ public class OrderService(ApplicationDbContext dbContext) : IOrderService
     private static (TimeSpan Start, TimeSpan End) ParseSlot(string timeSlot)
     {
         var parts = timeSlot.Trim().Split('-');
-        return (TimeSpan.Parse(parts[0]), TimeSpan.Parse(parts[1]));
+        if (parts.Length != 2 ||
+            !TimeSpan.TryParse(parts[0].Trim(), out var start) ||
+            !TimeSpan.TryParse(parts[1].Trim(), out var end) ||
+            start >= end)
+        {
+            throw new BadRequestException(ErrorCode.INVALID_TIME_SLOT);
+        }
+        return (start, end);
     }
 
     private static bool SlotsOverlap(TimeSpan startA, TimeSpan endA, TimeSpan startB, TimeSpan endB)

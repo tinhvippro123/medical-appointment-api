@@ -18,97 +18,75 @@ public class DepartmentService(ApplicationDbContext context, IWebHostEnvironment
     public async Task<List<DepartmentDto>> GetAllAsync()
     {
         var departments = await _context.Departments
+            .AsNoTracking()
             .Where(d => d.IsActive)
             .ToListAsync();
 
-        var result = new List<DepartmentDto>();
-        foreach (var d in departments)
-        {
-            result.Add(new DepartmentDto
-            {
-                Id = d.Id,
-                Name = d.Name,
-                Description = d.Description,
-                ImageUrl = d.ImageUrl,
-                ConsultationFee = d.ConsultationFee,
-                IsActive = d.IsActive,
-                CreatedAt = d.CreatedAt,
-                UpdatedAt = d.UpdatedAt
-            });
-        }
-        return result;
+        return departments.Select(ToDto).ToList();
     }
 
     // Lấy chi tiết 1 chuyên khoa theo Id
     public async Task<DepartmentDto> GetByIdAsync(int id)
     {
-        var d = await _context.Departments.FindAsync(id);
-        if (d == null || !d.IsActive)
+        var d = await _context.Departments
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == id && x.IsActive);
+        if (d == null)
             throw new NotFoundException(ErrorCode.DEPARTMENT_NOT_FOUND);
 
-        return new DepartmentDto
-        {
-            Id = d.Id,
-            Name = d.Name,
-            Description = d.Description,
-            ImageUrl = d.ImageUrl,
-            ConsultationFee = d.ConsultationFee,
-            IsActive = d.IsActive,
-            CreatedAt = d.CreatedAt,
-            UpdatedAt = d.UpdatedAt
-        };
+        return ToDto(d);
     }
 
     // Lấy danh sách bác sĩ theo chuyên khoa (chỉ IsActive = true, có phân trang)
     public async Task<PagedResult<DoctorResponse>> GetDoctorsAsync(int departmentId, int page, int pageSize)
     {
-        var department = await _context.Departments.FindAsync(departmentId);
-        if (department == null || !department.IsActive)
+        var department = await _context.Departments
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == departmentId && x.IsActive);
+        if (department == null)
         {
             throw new NotFoundException(ErrorCode.DEPARTMENT_NOT_FOUND);
         }
 
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 10;
+        if (pageSize > 50) pageSize = 50;
 
         var query = _context.Doctors
+            .AsNoTracking()
             .Where(d => d.DepartmentId == departmentId && d.IsActive)
-            .Include(d => d.Department)
-            .Include(d => d.Room)
-            .OrderByDescending(d => d.CreatedAt);
+            .OrderByDescending(d => d.CreatedAt)
+            .ThenByDescending(d => d.Id);
 
         var totalCount = await query.CountAsync();
+        long skip = ((long)page - 1) * pageSize;
 
-        var doctors = await query
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
-
-        var items = new List<DoctorResponse>();
-        foreach (var d in doctors)
-        {
-            var item = new DoctorResponse
-            {
-                Id = d.Id,
-                FullName = d.FullName,
-                Qualification = d.Qualification,
-                Email = d.Email,
-                Phone = d.Phone,
-                DepartmentId = d.DepartmentId,
-                DepartmentName = d.Department != null ? d.Department.Name : "",
-                RoomId = d.RoomId,
-                RoomNumber = d.Room != null ? d.Room.RoomNumber : null,
-                Floor = d.Room != null ? d.Room.Floor : null,
-                Description = d.Description,
-                AvatarUrl = d.AvatarUrl,
-                ExperienceYears = d.ExperienceYears,
-                ConsultationFee = department.ConsultationFee,
-                IsActive = d.IsActive,
-                CreatedAt = d.CreatedAt,
-                UpdatedAt = d.UpdatedAt
-            };
-            items.Add(item);
-        }
+        var items = skip >= totalCount
+            ? new List<DoctorResponse>()
+            : await query
+                .Skip((int)skip)
+                .Take(pageSize)
+                .Select(d => new DoctorResponse
+                {
+                    Id = d.Id,
+                    FullName = d.FullName,
+                    Qualification = d.Qualification,
+                    Email = d.Email,
+                    Phone = d.Phone,
+                    DepartmentId = d.DepartmentId,
+                    DepartmentName = department.Name,
+                    RoomId = d.Room != null && d.Room.IsActive ? d.RoomId : null,
+                    RoomNumber = d.Room != null && d.Room.IsActive ? d.Room.RoomNumber : null,
+                    Floor = d.Room != null && d.Room.IsActive ? d.Room.Floor : null,
+                    Description = d.Description,
+                    AvatarUrl = d.AvatarUrl,
+                    ExperienceYears = d.ExperienceYears,
+                    ConsultationFee = department.ConsultationFee,
+                    IsActive = d.IsActive,
+                    CreatedAt = d.CreatedAt,
+                    UpdatedAt = d.UpdatedAt
+                })
+                .ToListAsync();
 
         return new PagedResult<DoctorResponse>
         {
@@ -122,8 +100,9 @@ public class DepartmentService(ApplicationDbContext context, IWebHostEnvironment
     // Tạo mới chuyên khoa
     public async Task<DepartmentDto> CreateAsync(CreateDepartmentDto dto)
     {
+        var trimmedName = dto.Name.Trim();
         var department = await _context.Departments
-            .FirstOrDefaultAsync(d => d.Name == dto.Name);
+            .FirstOrDefaultAsync(d => d.Name == trimmedName);
 
         if (department != null)
         {
@@ -136,35 +115,25 @@ public class DepartmentService(ApplicationDbContext context, IWebHostEnvironment
             // Đã có nhưng bị xóa mềm -> Khôi phục
             department.IsActive = true;
             department.ConsultationFee = dto.ConsultationFee!.Value;
-            department.Description = dto.Description;
-            department.ImageUrl = dto.ImageUrl;
+            department.Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description.Trim();
+            department.ImageUrl = string.IsNullOrWhiteSpace(dto.ImageUrl) ? null : dto.ImageUrl.Trim();
         }
         else
         {
             // Chưa có -> Tạo mới hoàn toàn
             department = new Department
             {
-                Name = dto.Name,
+                Name = trimmedName,
                 ConsultationFee = dto.ConsultationFee!.Value,
-                Description = dto.Description,
-                ImageUrl = dto.ImageUrl
+                Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description.Trim(),
+                ImageUrl = string.IsNullOrWhiteSpace(dto.ImageUrl) ? null : dto.ImageUrl.Trim()
             };
             _context.Departments.Add(department);
         }
 
         await _context.SaveChangesAsync();
 
-        return new DepartmentDto
-        {
-            Id = department.Id,
-            Name = department.Name,
-            Description = department.Description,
-            ImageUrl = department.ImageUrl,
-            ConsultationFee = department.ConsultationFee,
-            IsActive = department.IsActive,
-            CreatedAt = department.CreatedAt,
-            UpdatedAt = department.UpdatedAt
-        };
+        return ToDto(department);
     }
 
     // Cập nhật chuyên khoa
@@ -174,30 +143,22 @@ public class DepartmentService(ApplicationDbContext context, IWebHostEnvironment
         if (department == null || !department.IsActive)
             throw new NotFoundException(ErrorCode.DEPARTMENT_NOT_FOUND);
 
+        var trimmedName = dto.Name.Trim();
+
         // Kiểm tra trùng tên (trừ chính nó, tính cả những khoa đã xóa mềm để tránh lỗi Unique Index của DB)
         var exists = await _context.Departments
-            .AnyAsync(d => d.Name == dto.Name && d.Id != id);
+            .AnyAsync(d => d.Name == trimmedName && d.Id != id);
         if (exists)
             throw new BadRequestException(ErrorCode.DEPARTMENT_NAME_EXISTS);
 
-        department.Name = dto.Name;
+        department.Name = trimmedName;
         department.ConsultationFee = dto.ConsultationFee!.Value;
-        department.Description = dto.Description;
-        department.ImageUrl = dto.ImageUrl;
+        department.Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description.Trim();
+        department.ImageUrl = string.IsNullOrWhiteSpace(dto.ImageUrl) ? null : dto.ImageUrl.Trim();
 
         await _context.SaveChangesAsync();
 
-        return new DepartmentDto
-        {
-            Id = department.Id,
-            Name = department.Name,
-            Description = department.Description,
-            ImageUrl = department.ImageUrl,
-            ConsultationFee = department.ConsultationFee,
-            IsActive = department.IsActive,
-            CreatedAt = department.CreatedAt,
-            UpdatedAt = department.UpdatedAt
-        };
+        return ToDto(department);
     }
 
     // Xóa mềm chuyên khoa (IsActive = false) + xóa file ảnh kèm theo
@@ -279,17 +240,7 @@ public class DepartmentService(ApplicationDbContext context, IWebHostEnvironment
         // Chỉ xóa ảnh cũ sau khi lưu ảnh mới và database thành công.
         DeleteLocalImage(oldImageUrl);
 
-        return new DepartmentDto
-        {
-            Id = department.Id,
-            Name = department.Name,
-            Description = department.Description,
-            ImageUrl = department.ImageUrl,
-            ConsultationFee = department.ConsultationFee,
-            IsActive = department.IsActive,
-            CreatedAt = department.CreatedAt,
-            UpdatedAt = department.UpdatedAt
-        };
+        return ToDto(department);
     }
 
     // Xóa ảnh của chuyên khoa
@@ -307,18 +258,20 @@ public class DepartmentService(ApplicationDbContext context, IWebHostEnvironment
         await _context.SaveChangesAsync();
         DeleteLocalImage(oldImageUrl);
 
-        return new DepartmentDto
-        {
-            Id = department.Id,
-            Name = department.Name,
-            Description = department.Description,
-            ImageUrl = department.ImageUrl,
-            ConsultationFee = department.ConsultationFee,
-            IsActive = department.IsActive,
-            CreatedAt = department.CreatedAt,
-            UpdatedAt = department.UpdatedAt
-        };
+        return ToDto(department);
     }
+
+    private static DepartmentDto ToDto(Department d) => new()
+    {
+        Id = d.Id,
+        Name = d.Name,
+        Description = d.Description,
+        ImageUrl = d.ImageUrl,
+        ConsultationFee = d.ConsultationFee,
+        IsActive = d.IsActive,
+        CreatedAt = d.CreatedAt,
+        UpdatedAt = d.UpdatedAt
+    };
     // Chỉ lưu URL, không tải ảnh từ website khác về server.
     public async Task<DepartmentDto> SetImageUrlAsync(int id, string imageUrl)
     {

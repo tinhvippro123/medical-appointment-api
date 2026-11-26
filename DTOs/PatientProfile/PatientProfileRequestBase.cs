@@ -39,7 +39,8 @@ public abstract class PatientProfileRequestBase : IValidatableObject
     {
         if (DateOfBirth.HasValue)
         {
-            if (DateOfBirth.Value > DateTime.UtcNow)
+            var todayVn = DateTime.UtcNow.AddHours(7).Date;
+            if (DateOfBirth.Value.Date > todayVn)
             {
                 yield return new ValidationResult("Ngày sinh không được ở tương lai!", [nameof(DateOfBirth)]);
             }

@@ -1,3 +1,4 @@
+using System.Data;
 using MedicalAppointment.API.Data;
 using MedicalAppointment.API.DTOs.DoctorDayOff;
 using MedicalAppointment.API.Entities;
@@ -13,7 +14,7 @@ public class DoctorDayOffService(ApplicationDbContext context) : IDoctorDayOffSe
 
     public async Task<IEnumerable<DoctorDayOffResponse>> GetDayOffsByDoctorIdAsync(int doctorId, DoctorDayOffQueryParameters query)
     {
-        var doctorExists = await _context.Doctors.AnyAsync(d => d.Id == doctorId && d.IsActive);
+        var doctorExists = await _context.Doctors.AnyAsync(d => d.Id == doctorId && d.IsActive && d.Department.IsActive);
         if (!doctorExists)
         {
             throw new NotFoundException(ErrorCode.DOCTOR_NOT_FOUND);
@@ -45,12 +46,6 @@ public class DoctorDayOffService(ApplicationDbContext context) : IDoctorDayOffSe
 
     public async Task<DoctorDayOffResponse> CreateDayOffAsync(int doctorId, CreateDoctorDayOffRequest request)
     {
-        var doctorExists = await _context.Doctors.AnyAsync(d => d.Id == doctorId && d.IsActive);
-        if (!doctorExists)
-        {
-            throw new NotFoundException(ErrorCode.DOCTOR_NOT_FOUND);
-        }
-
         var todayVn = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
         var requestDate = request.Date!.Value;
         if (requestDate < todayVn)
@@ -61,6 +56,15 @@ public class DoctorDayOffService(ApplicationDbContext context) : IDoctorDayOffSe
         var targetDate = requestDate.ToDateTime(TimeOnly.MinValue);
         var startOfDay = targetDate.Date;
         var endOfDay = startOfDay.AddDays(1);
+
+        // Dùng Serializable transaction để ngăn write skew với OrderService.CheckoutAsync
+        await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+
+        var doctorExists = await _context.Doctors.AnyAsync(d => d.Id == doctorId && d.IsActive);
+        if (!doctorExists)
+        {
+            throw new NotFoundException(ErrorCode.DOCTOR_NOT_FOUND);
+        }
 
         var isDuplicate = await _context.DoctorDayOffs
             .AnyAsync(ddo => ddo.DoctorId == doctorId &&
@@ -95,6 +99,7 @@ public class DoctorDayOffService(ApplicationDbContext context) : IDoctorDayOffSe
 
         _context.DoctorDayOffs.Add(dayOff);
         await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
 
         return MapToResponse(dayOff);
     }

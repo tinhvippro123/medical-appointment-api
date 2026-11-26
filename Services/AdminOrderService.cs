@@ -167,14 +167,34 @@ public class AdminOrderService(ApplicationDbContext context) : IAdminOrderServic
             throw new BadRequestException(ErrorCode.INVALID_ORDER_STATUS_TRANSITION);
         }
 
-        order.Status = newStatus;
+        // Chặn xác nhận/hoàn thành đơn thanh toán trực tuyến (VNPay/VietQR) khi chưa thanh toán
+        var isCashOrder = string.Equals(order.PaymentMethod, "Cash", StringComparison.OrdinalIgnoreCase);
+        var isPaidOrder = string.Equals(order.PaymentStatus, "Paid", StringComparison.OrdinalIgnoreCase);
+
+        if ((newStatus == "Confirmed" || newStatus == "Completed") && !isCashOrder && !isPaidOrder)
+        {
+            throw new BadRequestException(ErrorCode.UNPAID_ONLINE_ORDER_CANNOT_CONFIRM);
+        }
 
         if (newStatus == "Cancelled")
         {
-            order.CancellationReason = string.IsNullOrWhiteSpace(request.CancellationReason)
-                ? null
-                : request.CancellationReason.Trim();
+            if (string.IsNullOrWhiteSpace(request.CancellationReason))
+            {
+                throw new BadRequestException(ErrorCode.CANCELLATION_REASON_REQUIRED);
+            }
+
+            order.CancellationReason = request.CancellationReason.Trim();
+            if (isPaidOrder)
+            {
+                order.PaymentStatus = "Refunded";
+            }
         }
+        else if (newStatus == "Completed" && isCashOrder && !isPaidOrder)
+        {
+            order.PaymentStatus = "Paid";
+        }
+
+        order.Status = newStatus;
 
         foreach (var detail in order.OrderDetails)
         {

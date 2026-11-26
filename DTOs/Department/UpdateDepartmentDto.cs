@@ -4,6 +4,8 @@ namespace MedicalAppointment.API.DTOs.Department;
 
 public class UpdateDepartmentDto
 {
+    [Required(ErrorMessage = "Vui lòng nhập tên chuyên khoa")]
+    [StringLength(200, ErrorMessage = "Tên chuyên khoa tối đa 200 ký tự")]
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string? ImageUrl { get; set; }

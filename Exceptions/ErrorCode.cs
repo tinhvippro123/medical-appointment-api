@@ -33,6 +33,8 @@ public class ErrorCode(string code, string message)
     // --- DOCTOR ---
     public static readonly ErrorCode DOCTOR_NOT_FOUND = new("DOCTOR_NOT_FOUND", "Không tìm thấy thông tin bác sĩ!");
     public static readonly ErrorCode DOCTOR_SCHEDULE_CONFLICT = new("DOCTOR_SCHEDULE_CONFLICT", "Bác sĩ đã có lịch trong khung giờ này!");
+    public static readonly ErrorCode DOCTOR_SCHEDULE_HAS_ORDERS = new("DOCTOR_SCHEDULE_HAS_ORDERS", "Không thể sửa hoặc xóa ca làm việc vì đang có lịch hẹn trong tương lai!");
+    public static readonly ErrorCode ROOM_SCHEDULE_CONFLICT = new("ROOM_SCHEDULE_CONFLICT", "Phòng khám này đã có bác sĩ khác làm việc trong khung giờ trùng lặp!");
     public static readonly ErrorCode DOCTOR_HAS_ORDERS = new("DOCTOR_HAS_ORDERS", "Bác sĩ đã có trong đơn hàng, không thể xóa!");
     public static readonly ErrorCode DOCTOR_EMAIL_ALREADY_EXISTS = new("DOCTOR_EMAIL_ALREADY_EXISTS", "Email bác sĩ đã được sử dụng!");
     public static readonly ErrorCode ROOM_NOT_FOUND = new("ROOM_NOT_FOUND", "Không tìm thấy phòng khám!");
@@ -71,9 +73,15 @@ public class ErrorCode(string code, string message)
     public static readonly ErrorCode ORDER_ALREADY_PAID = new("ORDER_ALREADY_PAID", "Đơn đặt lịch này đã được thanh toán!");
     public static readonly ErrorCode ORDER_CANCELLED_CANNOT_PAY = new("ORDER_CANCELLED_CANNOT_PAY", "Đơn đặt lịch đã hủy, không thể thanh toán!");
     public static readonly ErrorCode INVALID_PAYMENT_SIGNATURE = new("INVALID_PAYMENT_SIGNATURE", "Chữ ký xác thực giao dịch thanh toán không hợp lệ!");
+    public static readonly ErrorCode PAYMENT_AMOUNT_MISMATCH = new("PAYMENT_AMOUNT_MISMATCH", "Số tiền thanh toán không khớp với giá trị đơn hàng!");
+    public static readonly ErrorCode CANNOT_DISCARD_ORDER = new("CANNOT_DISCARD_ORDER", "Chỉ có thể thu hồi đơn thanh toán trực tuyến đang chờ xác nhận và chưa thanh toán!");
+    public static readonly ErrorCode UNPAID_ONLINE_ORDER_CANNOT_CONFIRM = new("UNPAID_ONLINE_ORDER_CANNOT_CONFIRM", "Đơn thanh toán trực tuyến chưa thanh toán không thể xác nhận hoặc hoàn thành!");
+    public static readonly ErrorCode CANCELLATION_REASON_REQUIRED = new("CANCELLATION_REASON_REQUIRED", "Vui lòng nhập lý do khi hủy đơn đặt lịch!");
 
     // --- GENERAL ---
     public static readonly ErrorCode RESOURCE_NOT_FOUND = new("RESOURCE_NOT_FOUND", "Không tìm thấy tài nguyên yêu cầu!");
+    public static readonly ErrorCode DUPLICATE_RESOURCE = new("DUPLICATE_RESOURCE", "Dữ liệu bị trùng lặp, vui lòng kiểm tra lại!");
+    public static readonly ErrorCode TOO_MANY_REQUESTS = new("TOO_MANY_REQUESTS", "Bạn thao tác quá nhanh, vui lòng thử lại sau ít phút!");
     public static readonly ErrorCode UNAUTHORIZED = new("UNAUTHORIZED", "Vui lòng đăng nhập để tiếp tục!");
     public static readonly ErrorCode FORBIDDEN = new("FORBIDDEN", "Bạn không có quyền thực hiện hành động này!");
     public static readonly ErrorCode INTERNAL_SERVER_ERROR = new("INTERNAL_SERVER_ERROR", "Đã xảy ra lỗi hệ thống nghiêm trọng!");

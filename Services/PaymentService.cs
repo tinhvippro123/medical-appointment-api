@@ -10,17 +10,32 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MedicalAppointment.API.Services;
 
-public class PaymentService(ApplicationDbContext dbContext, IConfiguration configuration) : IPaymentService
+public class PaymentService(
+    ApplicationDbContext dbContext,
+    IConfiguration configuration,
+    IHostEnvironment hostEnvironment) : IPaymentService
 {
     private string VnpTmnCode =>
         string.IsNullOrWhiteSpace(configuration["PaymentSettings:VnpTmnCode"])
             ? "YTEHP001"
             : configuration["PaymentSettings:VnpTmnCode"]!;
 
-    private string VnpHashSecret =>
-        string.IsNullOrWhiteSpace(configuration["PaymentSettings:VnpHashSecret"])
-            ? "VNPAY_SANDBOX_SECRET_KEY_YTE_HIEP_PHUOC_2026"
-            : configuration["PaymentSettings:VnpHashSecret"]!;
+    private string VnpHashSecret
+    {
+        get
+        {
+            var configured = configuration["PaymentSettings:VnpHashSecret"];
+            if (!string.IsNullOrWhiteSpace(configured))
+            {
+                return configured;
+            }
+            if (hostEnvironment.IsDevelopment())
+            {
+                return "VNPAY_SANDBOX_SECRET_KEY_YTE_HIEP_PHUOC_2026";
+            }
+            throw new InvalidOperationException("Chưa cấu hình PaymentSettings:VnpHashSecret.");
+        }
+    }
 
     private string VnpBaseUrl =>
         string.IsNullOrWhiteSpace(configuration["PaymentSettings:VnpBaseUrl"])
@@ -107,32 +122,42 @@ public class PaymentService(ApplicationDbContext dbContext, IConfiguration confi
         var secureHash = ComputeHmacSha512(VnpHashSecret, queryString);
         var paymentUrl = $"{VnpBaseUrl}?{queryString}&vnp_SecureHash={secureHash}";
 
-        var successCallbackParams = new SortedDictionary<string, string>(StringComparer.Ordinal)
-        {
-            ["vnp_Amount"] = amountMinor,
-            ["vnp_BankCode"] = "NCB",
-            ["vnp_OrderInfo"] = $"Thanh toan don dat lich kham #{order.Id}",
-            ["vnp_PayDate"] = nowVn.ToString("yyyyMMddHHmmss"),
-            ["vnp_ResponseCode"] = "00",
-            ["vnp_TmnCode"] = VnpTmnCode,
-            ["vnp_TransactionNo"] = $"14{nowVn:ddHHmmss}",
-            ["vnp_TransactionStatus"] = "00",
-            ["vnp_TxnRef"] = txnRef
-        };
-        var successQuery = BuildSortedQueryString(successCallbackParams);
-        var successHash = ComputeHmacSha512(VnpHashSecret, successQuery);
+        var isDev = hostEnvironment.IsDevelopment();
+        string callbackSuccessUrl = string.Empty;
+        string callbackCancelUrl = string.Empty;
 
-        var cancelCallbackParams = new SortedDictionary<string, string>(StringComparer.Ordinal)
+        if (isDev)
         {
-            ["vnp_Amount"] = amountMinor,
-            ["vnp_OrderInfo"] = $"Thanh toan don dat lich kham #{order.Id}",
-            ["vnp_ResponseCode"] = "24",
-            ["vnp_TmnCode"] = VnpTmnCode,
-            ["vnp_TransactionStatus"] = "02",
-            ["vnp_TxnRef"] = txnRef
-        };
-        var cancelQuery = BuildSortedQueryString(cancelCallbackParams);
-        var cancelHash = ComputeHmacSha512(VnpHashSecret, cancelQuery);
+            var successCallbackParams = new SortedDictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["vnp_Amount"] = amountMinor,
+                ["vnp_BankCode"] = "NCB",
+                ["vnp_OrderInfo"] = $"Thanh toan don dat lich kham #{order.Id}",
+                ["vnp_PayDate"] = nowVn.ToString("yyyyMMddHHmmss"),
+                ["vnp_ResponseCode"] = "00",
+                ["vnp_TmnCode"] = VnpTmnCode,
+                ["vnp_TransactionNo"] = $"14{nowVn:ddHHmmss}",
+                ["vnp_TransactionStatus"] = "00",
+                ["vnp_TxnRef"] = txnRef
+            };
+            var successQuery = BuildSortedQueryString(successCallbackParams);
+            var successHash = ComputeHmacSha512(VnpHashSecret, successQuery);
+
+            var cancelCallbackParams = new SortedDictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["vnp_Amount"] = amountMinor,
+                ["vnp_OrderInfo"] = $"Thanh toan don dat lich kham #{order.Id}",
+                ["vnp_ResponseCode"] = "24",
+                ["vnp_TmnCode"] = VnpTmnCode,
+                ["vnp_TransactionStatus"] = "02",
+                ["vnp_TxnRef"] = txnRef
+            };
+            var cancelQuery = BuildSortedQueryString(cancelCallbackParams);
+            var cancelHash = ComputeHmacSha512(VnpHashSecret, cancelQuery);
+
+            callbackSuccessUrl = $"{baseCallbackUrl}?{successQuery}&vnp_SecureHash={successHash}";
+            callbackCancelUrl = $"{baseCallbackUrl}?{cancelQuery}&vnp_SecureHash={cancelHash}";
+        }
 
         return new VnPayPaymentResponse
         {
@@ -140,8 +165,8 @@ public class PaymentService(ApplicationDbContext dbContext, IConfiguration confi
             Amount = order.TotalAmount,
             TxnRef = txnRef,
             PaymentUrl = paymentUrl,
-            CallbackSuccessUrl = $"{baseCallbackUrl}?{successQuery}&vnp_SecureHash={successHash}",
-            CallbackCancelUrl = $"{baseCallbackUrl}?{cancelQuery}&vnp_SecureHash={cancelHash}"
+            CallbackSuccessUrl = callbackSuccessUrl,
+            CallbackCancelUrl = callbackCancelUrl
         };
     }
 
@@ -226,6 +251,18 @@ public class PaymentService(ApplicationDbContext dbContext, IConfiguration confi
         if (order == null)
         {
             throw new NotFoundException(ErrorCode.ORDER_NOT_FOUND);
+        }
+
+        if (order.Status == "Cancelled")
+        {
+            throw new BadRequestException(ErrorCode.ORDER_CANCELLED_CANNOT_PAY);
+        }
+
+        var expectedAmountMinor = (long)Math.Round(order.TotalAmount * 100m, MidpointRounding.AwayFromZero);
+        var amountRaw = query["vnp_Amount"].ToString().Trim();
+        if (!long.TryParse(amountRaw, out var receivedAmountMinor) || receivedAmountMinor != expectedAmountMinor)
+        {
+            throw new BadRequestException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
         }
 
         if (responseCode == "00")

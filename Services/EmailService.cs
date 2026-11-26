@@ -6,7 +6,10 @@ using MedicalAppointment.API.Services.Interface;
 
 namespace MedicalAppointment.API.Services;
 
-public class EmailService(IConfiguration configuration, ILogger<EmailService> logger) : IEmailService
+public class EmailService(
+    IConfiguration configuration,
+    ILogger<EmailService> logger,
+    IHostEnvironment hostEnvironment) : IEmailService
 {
     public bool IsSmtpConfigured =>
         !string.IsNullOrWhiteSpace(configuration["EmailSettings:SmtpHost"]) &&
@@ -17,12 +20,18 @@ public class EmailService(IConfiguration configuration, ILogger<EmailService> lo
     {
         if (!IsSmtpConfigured)
         {
-            logger.LogInformation(
-                "[OTP EMAIL FALLBACK] {Purpose} | Email: {Email} | Mã OTP: {Otp} (hiệu lực 5 phút)",
-                purposeTitle,
-                toEmail,
-                otp);
-            return false;
+            if (hostEnvironment.IsDevelopment())
+            {
+                logger.LogInformation(
+                    "[OTP EMAIL FALLBACK] {Purpose} | Email: {Email} | Mã OTP: {Otp} (hiệu lực 5 phút)",
+                    purposeTitle,
+                    toEmail,
+                    otp);
+                return false;
+            }
+
+            logger.LogWarning("SMTP chưa được cấu hình ở môi trường {Environment}, không thể gửi OTP.", hostEnvironment.EnvironmentName);
+            throw new BadRequestException(ErrorCode.EMAIL_SEND_FAILED);
         }
 
         var host = configuration["EmailSettings:SmtpHost"]!;

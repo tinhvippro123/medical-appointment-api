@@ -1,15 +1,23 @@
 using System.Security.Claims;
 using MedicalAppointment.API.DTOs;
-using MedicalAppointment.API.Services;
 using MedicalAppointment.API.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+
 namespace MedicalAppointment.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
 public class AuthController(IAuthService authService) : ControllerBase
 {
+    private int? GetCurrentUserId()
+    {
+        var claim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
+        return claim != null && int.TryParse(claim.Value, out var userId) ? userId : null;
+    }
+
+    [EnableRateLimiting("auth")]
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterRequest request)
     {
@@ -17,6 +25,7 @@ public class AuthController(IAuthService authService) : ControllerBase
         return Ok(response);
     }
 
+    [EnableRateLimiting("auth")]
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginRequest request)
     {
@@ -28,21 +37,23 @@ public class AuthController(IAuthService authService) : ControllerBase
     [HttpPut("change-password")]
     public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId)){
+        var userId = GetCurrentUserId();
+        if (userId == null)
+        {
             return Unauthorized();
         }
-        await authService.ChangePassword(userId, request);
-        return Ok(new{message = "Đổi mật khẩu thành công!"});
+        await authService.ChangePassword(userId.Value, request);
+        return Ok(new { message = "Đổi mật khẩu thành công!" });
     }
 
     [Authorize]
     [HttpPost("logout")]
     public IActionResult Logout()
     {
-        return Ok(new{message = "Đăng xuất thành công."});
+        return Ok(new { message = "Đăng xuất thành công." });
     }
 
+    [EnableRateLimiting("auth")]
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
     {
@@ -59,6 +70,7 @@ public class AuthController(IAuthService authService) : ControllerBase
         return Ok(new { message = "Mã OTP đặt lại mật khẩu đã được gửi tới email của bạn." });
     }
 
+    [EnableRateLimiting("auth")]
     [HttpPost("reset-password")]
     public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
     {
@@ -66,6 +78,7 @@ public class AuthController(IAuthService authService) : ControllerBase
         return Ok(new { message = "Đặt lại mật khẩu thành công! Vui lòng đăng nhập bằng mật khẩu mới." });
     }
 
+    [EnableRateLimiting("auth")]
     [HttpPost("verify-email")]
     public async Task<IActionResult> VerifyEmail(VerifyEmailRequest request)
     {
@@ -73,6 +86,7 @@ public class AuthController(IAuthService authService) : ControllerBase
         return Ok(new { message = "Xác thực email thành công! Tài khoản của bạn đã được kích hoạt." });
     }
 
+    [EnableRateLimiting("auth")]
     [HttpPost("resend-verify-email")]
     public async Task<IActionResult> ResendVerifyEmail(ResendVerificationRequest request)
     {
@@ -93,13 +107,13 @@ public class AuthController(IAuthService authService) : ControllerBase
     [HttpPost("verify-password")]
     public async Task<IActionResult> VerifyPassword(VerifyPasswordRequest request)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+        var userId = GetCurrentUserId();
+        if (userId == null)
         {
             return Unauthorized();
         }
 
-        await authService.VerifyCurrentPassword(userId, request.Password);
+        await authService.VerifyCurrentPassword(userId.Value, request.Password);
         return Ok(new { verified = true });
     }
 
@@ -107,13 +121,13 @@ public class AuthController(IAuthService authService) : ControllerBase
     [HttpGet("me")]
     public async Task<IActionResult> GetMe()
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+        var userId = GetCurrentUserId();
+        if (userId == null)
         {
             return Unauthorized();
         }
 
-        var profile = await authService.GetMyProfile(userId);
+        var profile = await authService.GetMyProfile(userId.Value);
         return Ok(profile);
     }
 
@@ -121,16 +135,17 @@ public class AuthController(IAuthService authService) : ControllerBase
     [HttpPut("me")]
     public async Task<IActionResult> UpdateMe(UpdateMyProfileRequest request)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+        var userId = GetCurrentUserId();
+        if (userId == null)
         {
             return Unauthorized();
         }
 
-        var result = await authService.UpdateMyProfile(userId, request);
+        var result = await authService.UpdateMyProfile(userId.Value, request);
         return Ok(result);
     }
 
+    [EnableRateLimiting("auth")]
     [HttpPost("social-login")]
     public async Task<IActionResult> SocialLogin(SocialLoginRequest request)
     {

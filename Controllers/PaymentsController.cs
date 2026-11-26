@@ -8,7 +8,9 @@ namespace MedicalAppointment.API.Controllers;
 
 [Route("api/payments")]
 [ApiController]
-public class PaymentsController(IPaymentService paymentService) : ControllerBase
+public class PaymentsController(
+    IPaymentService paymentService,
+    IHostEnvironment hostEnvironment) : ControllerBase
 {
     private int? GetCurrentUserId()
     {
@@ -75,6 +77,12 @@ public class PaymentsController(IPaymentService paymentService) : ControllerBase
         if (userId == null)
         {
             return Unauthorized();
+        }
+
+        // Chỉ cho phép xác nhận mô phỏng trong môi trường Development hoặc bởi ADMIN đối soát
+        if (!hostEnvironment.IsDevelopment() && !IsAdminUser())
+        {
+            return Forbid();
         }
 
         var result = await paymentService.ConfirmPaymentAsync(

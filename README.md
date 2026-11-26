@@ -1,98 +1,92 @@
 ﻿# 🏥 Medical Appointment API
 
-REST API Backend cho ứng dụng Đăng ký Khám Chữa Bệnh.
+REST API Backend cho Ứng dụng Đăng Ký Khám Chữa Bệnh.
 
-## 🛠️ Tech Stack
+## 📚 Tài liệu
+
+| Tài liệu | Mô tả |
+|-----------|-------|
+| [Hướng dẫn Commit và PR](docs/CONTRIBUTING.md) | Quy trình commit, đặt tên branch, tạo Pull Request |
+
+## 🔧 Tech Stack
 
 - **Framework:** ASP.NET Core 10
 - **Database:** SQL Server
 - **ORM:** Entity Framework Core
 - **Authentication:** JWT Bearer Token
-- **Architecture:** Multi-Module Monolith
+- **Architecture:** Single Project (Monolith)
 
 ## 📁 Cấu Trúc Project
 
 ```
 MedicalAppointmentAPI.slnx
 └── src/
-    ├── MedicalAppointment.API/          → Entry point (Program.cs, DI config)
-    ├── MedicalAppointment.Shared/       → Dùng chung (DbContext, Base, Helpers)
-    ├── MedicalAppointment.Auth/         → 👤 Module Xác thực & Người dùng
-    ├── MedicalAppointment.Department/   → 🏢 Module Chuyên khoa
-    ├── MedicalAppointment.Doctor/       → 👨‍⚕️ Module Bác sĩ
-    └── MedicalAppointment.Booking/      → 📅 Module Đặt lịch khám
+    └── MedicalAppointment.API/
+        ├── Controllers/       👈 API Controllers
+        ├── Data/              👈 DbContext + Migrations
+        ├── DTOs/              👈 Request/Response models
+        ├── Entities/          👈 Database Entities (12 bảng)
+        ├── Helpers/           👈 JWT, Password Hashing
+        ├── Middlewares/       👈 Custom Middleware
+        ├── Services/          👈 Business Logic
+        ├── Program.cs         👈 Entry point
+        └── appsettings.json   👈 Cấu hình
 ```
 
-## 🔗 Module Dependencies
+## 👥 Nhóm phát triển
 
-```
-API ──→ Auth, Department, Doctor, Booking
-Booking ──→ Shared, Auth, Doctor
-Doctor ──→ Shared, Department
-Department ──→ Shared
-Auth ──→ Shared
-```
+| Feature | Thành viên | Phụ trách |
+|---------|-----------|-----------|
+| Auth + Setup | Tính | Đăng ký, Đăng nhập, JWT, Role, User Management |
+| Department + Room | Triệt | CRUD Chuyên khoa, Phòng khám, Upload ảnh |
+| Doctor + Schedule | Thịnh | CRUD Bác sĩ, Lịch làm việc, Tìm kiếm |
+| Booking | Thuận | Giỏ hàng, Đặt lịch, Thanh toán |
 
-## 👥 Team Ownership
+## 🚀 Chạy project
 
-| Module | Owner | Mô tả |
-|--------|-------|--------|
-| Shared | Team Lead (A) | DbContext, Base entities, Helpers |
-| Auth | Thành viên A | Đăng ký, Đăng nhập, JWT, Role, Phân quyền |
-| Department | Thành viên B | CRUD Chuyên khoa, Upload ảnh |
-| Doctor | Thành viên C | CRUD Bác sĩ, Lịch làm việc, Tìm kiếm |
-| Booking | Thành viên D | Đặt lịch, Giỏ hàng, Thanh toán, Quản lý đơn |
-
-## 🚀 Getting Started
-
-### Yêu cầu
-- .NET 10 SDK
-- SQL Server (LocalDB hoặc Express)
-
-### Chạy project
 ```bash
-git clone <repository-url>
+git clone https://github.com/tinhvippro123/medical-appointment-api.git
 cd medical-appointment-api
+git checkout develop
 dotnet restore
-dotnet ef database update --project src/MedicalAppointment.Shared --startup-project src/MedicalAppointment.API
 dotnet run --project src/MedicalAppointment.API
 ```
-
-API sẽ chạy tại: http://localhost:5000
 
 ## 📋 API Endpoints
 
 ### Auth (/api/auth)
-- POST /api/auth/register - Đăng ký
-- POST /api/auth/login - Đăng nhập
-- POST /api/auth/logout - Đăng xuất
-- PUT /api/auth/change-password - Đổi mật khẩu
+- POST /api/auth/register → Đăng ký (SĐT + Mật khẩu)
+- POST /api/auth/login → Đăng nhập (SĐT + Mật khẩu, trả JWT token)
+- POST /api/auth/logout → Đăng xuất
+- PUT /api/auth/change-password → Đổi mật khẩu
 
 ### Department (/api/departments)
-- GET /api/departments - Danh sách chuyên khoa
-- POST /api/departments - Thêm (Admin)
-- PUT /api/departments/{id} - Sửa (Admin)
-- DELETE /api/departments/{id} - Xóa (Admin)
+- GET /api/departments → Danh sách chuyên khoa
+- POST /api/departments → Thêm (Admin)
+- PUT /api/departments/{id} → Sửa (Admin)
+- DELETE /api/departments/{id} → Xóa (Admin)
 
 ### Doctor (/api/doctors)
-- GET /api/doctors - Danh sách bác sĩ (phân trang)
-- GET /api/doctors/{id} - Chi tiết bác sĩ
-- GET /api/doctors/search?keyword= - Tìm kiếm
-- POST /api/doctors - Thêm (Admin)
+- GET /api/doctors → Danh sách bác sĩ (phân trang)
+- GET /api/doctors/{id} → Chi tiết bác sĩ
+- GET /api/doctors/department/{id} → Bác sĩ theo chuyên khoa
+- GET /api/doctors/search?keyword= → Tìm kiếm
+- POST /api/doctors → Thêm (Admin)
 
-### Appointment (/api/appointments)
-- GET /api/appointments/cart - Xem giỏ hàng
-- POST /api/appointments/cart - Thêm lịch hẹn vào giỏ
-- POST /api/appointments/checkout - Xác nhận đặt lịch
-- GET /api/appointments - Lịch sử đặt lịch
+### Booking (/api/appointments)
+- GET /api/appointments/cart → Xem giỏ hàng
+- POST /api/appointments/cart → Thêm lịch hẹn vào giỏ
+- DELETE /api/appointments/cart/{id} → Xóa khỏi giỏ
+- POST /api/appointments/checkout → Xác nhận đặt lịch
+- GET /api/appointments → Lịch sử đặt lịch
 
 ## 🌿 Git Workflow
 
 ```
 main (production)
-  └── develop (integration)
-       ├── feature/auth          ← Thành viên A
-       ├── feature/department    ← Thành viên B
-       ├── feature/doctor        ← Thành viên C
-       └── feature/booking       ← Thành viên D
+  └── develop (tích hợp)
+       ├── feature/auth-login        Tính
+       ├── feature/department-crud   Triệt
+       ├── feature/doctor-list       Thịnh
+       └── feature/cart-checkout     Thuận
 ```

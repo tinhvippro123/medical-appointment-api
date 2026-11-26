@@ -1,0 +1,16 @@
+namespace MedicalAppointment.API.Entities;
+
+public class Department : BaseEntity
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string? ImageUrl { get; set; }
+    public decimal ConsultationFee { get; set; }
+    public bool IsActive { get; set; } = true;
+
+    // Navigation
+    public ICollection<Room> Rooms { get; set; } = [];
+    public ICollection<Doctor> Doctors { get; set; } = [];
+}
+

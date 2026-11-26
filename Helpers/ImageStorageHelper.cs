@@ -4,10 +4,6 @@ using Microsoft.AspNetCore.Http;
 
 namespace MedicalAppointment.API.Helpers;
 
-/// <summary>
-/// Helper dùng chung để lưu và xóa ảnh trong wwwroot/images/{subfolder}/.
-/// Nhận tên thư mục con (ví dụ "doctors", "departments") để dùng cho nhiều chức năng.
-/// </summary>
 public class ImageStorageHelper
 {
     private readonly IWebHostEnvironment _env;
@@ -19,10 +15,6 @@ public class ImageStorageHelper
         _env = env;
     }
 
-    /// <summary>
-    /// Lưu file ảnh vào wwwroot/images/{subfolder}/ với tên Guid mới.
-    /// Trả về đường dẫn tương đối (ví dụ "/images/doctors/abc123.jpg").
-    /// </summary>
     public async Task<string> SaveImageAsync(IFormFile file, string subfolder)
     {
         if (file == null)
@@ -64,11 +56,7 @@ public class ImageStorageHelper
         return $"/images/{subfolder}/{fileName}";
     }
 
-    /// <summary>
-    /// Xóa file ảnh từ đường dẫn tương đối (ví dụ "/images/doctors/abc123.jpg").
-    /// Chỉ xóa khi file nằm dưới wwwroot/images/.
-    /// Không ném lỗi nếu file không tồn tại hoặc đường dẫn không hợp lệ.
-    /// </summary>
+    // Chỉ xóa khi đường dẫn trỏ vào wwwroot/images/, bỏ qua nếu không hợp lệ
     public void DeleteImage(string relativePath)
     {
         if (string.IsNullOrWhiteSpace(relativePath))

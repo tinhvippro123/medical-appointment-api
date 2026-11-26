@@ -12,12 +12,6 @@ public class AdminOrdersController(IAdminOrderService adminOrderService) : Contr
 {
     private readonly IAdminOrderService _adminOrderService = adminOrderService;
 
-    /// <summary>
-    /// GET /api/admin/orders
-    /// Danh sách tất cả đơn đặt lịch, sắp xếp CreatedAt DESC, phân trang PagedResult&lt;T&gt;,
-    /// lọc tùy chọn theo Status, Keyword (tên/SĐT/mã đơn) và khoảng ngày FromDate - ToDate.
-    /// ADMIN only.
-    /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] AdminOrderQueryParameters query)
     {
@@ -25,11 +19,6 @@ public class AdminOrdersController(IAdminOrderService adminOrderService) : Contr
         return Ok(result);
     }
 
-    /// <summary>
-    /// GET /api/admin/orders/{id:int}
-    /// Chi tiết 1 đơn đặt lịch kèm OrderDetails.
-    /// ADMIN only.
-    /// </summary>
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
@@ -37,11 +26,6 @@ public class AdminOrdersController(IAdminOrderService adminOrderService) : Contr
         return Ok(result);
     }
 
-    /// <summary>
-    /// PUT /api/admin/orders/{id:int}/status
-    /// Cập nhật trạng thái đơn đặt lịch và đồng bộ chi tiết.
-    /// ADMIN only.
-    /// </summary>
     [HttpPut("{id:int}/status")]
     public async Task<IActionResult> UpdateStatus(int id, UpdateOrderStatusRequest request)
     {

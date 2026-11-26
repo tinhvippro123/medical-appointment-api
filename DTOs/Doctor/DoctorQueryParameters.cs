@@ -2,10 +2,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace MedicalAppointment.API.DTOs.Doctor;
 
-/// <summary>
-/// Query parameters cho GET /api/doctors (danh sách phân trang).
-/// Dùng [FromQuery] trên controller.
-/// </summary>
 public class DoctorQueryParameters
 {
     [Range(1, int.MaxValue, ErrorMessage = "Trang phải lớn hơn 0")]

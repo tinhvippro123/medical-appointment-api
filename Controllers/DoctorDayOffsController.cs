@@ -11,10 +11,6 @@ public class DoctorDayOffsController(IDoctorDayOffService dayOffService) : Contr
 {
     private readonly IDoctorDayOffService _dayOffService = dayOffService;
 
-    /// <summary>
-    /// GET /api/doctors/{doctorId}/day-offs?from=yyyy-MM-dd&amp;to=yyyy-MM-dd
-    /// Lấy danh sách ngày nghỉ của bác sĩ, sắp xếp ngày tăng dần. Công khai.
-    /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetDayOffs(int doctorId, [FromQuery] DoctorDayOffQueryParameters query)
     {
@@ -22,10 +18,6 @@ public class DoctorDayOffsController(IDoctorDayOffService dayOffService) : Contr
         return Ok(result);
     }
 
-    /// <summary>
-    /// POST /api/doctors/{doctorId}/day-offs
-    /// Thêm ngày nghỉ cho bác sĩ. ADMIN only.
-    /// </summary>
     [HttpPost]
     [Authorize(Roles = "ADMIN")]
     public async Task<IActionResult> CreateDayOff(int doctorId, CreateDoctorDayOffRequest request)
@@ -34,10 +26,6 @@ public class DoctorDayOffsController(IDoctorDayOffService dayOffService) : Contr
         return StatusCode(201, result);
     }
 
-    /// <summary>
-    /// DELETE /api/doctors/{doctorId}/day-offs/{id}
-    /// Xóa ngày nghỉ của bác sĩ. ADMIN only.
-    /// </summary>
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "ADMIN")]
     public async Task<IActionResult> DeleteDayOff(int doctorId, int id)

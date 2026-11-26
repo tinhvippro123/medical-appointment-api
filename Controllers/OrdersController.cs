@@ -21,10 +21,6 @@ public class OrdersController(IOrderService orderService) : ControllerBase
         return null;
     }
 
-    /// <summary>
-    /// POST /api/orders/checkout
-    /// Chuyển toàn bộ giỏ hàng của user thành 1 đơn đặt lịch và xóa sạch giỏ hàng.
-    /// </summary>
     [HttpPost("checkout")]
     public async Task<IActionResult> Checkout(CheckoutRequest request)
     {
@@ -38,10 +34,6 @@ public class OrdersController(IOrderService orderService) : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
-    /// <summary>
-    /// GET /api/orders
-    /// Danh sách đơn đặt lịch của user đang đăng nhập, sắp xếp CreatedAt DESC, phân trang.
-    /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] OrderQueryParameters query)
     {
@@ -55,10 +47,6 @@ public class OrdersController(IOrderService orderService) : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>
-    /// GET /api/orders/{id:int}
-    /// Chi tiết đơn đặt lịch kèm OrderDetails của user đang đăng nhập.
-    /// </summary>
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
@@ -72,10 +60,6 @@ public class OrdersController(IOrderService orderService) : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>
-    /// DELETE /api/orders/{id:int}/unpaid
-    /// Tự động thu hồi/xóa đơn tạm chưa thanh toán khi người dùng thoát hoặc hủy cổng thanh toán online.
-    /// </summary>
     [HttpDelete("{id:int}/unpaid")]
     public async Task<IActionResult> DiscardUnpaid(int id)
     {

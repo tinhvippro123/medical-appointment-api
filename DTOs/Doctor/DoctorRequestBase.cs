@@ -3,11 +3,6 @@ using MedicalAppointment.API.DTOs.Common;
 
 namespace MedicalAppointment.API.DTOs.Doctor;
 
-/// <summary>
-/// Lớp cơ sở cho Create và Update Doctor request.
-/// PUT thay thế toàn bộ trường: trường optional không gửi thì thành null trong DB.
-/// PUT giữ ảnh cũ nếu không gửi Image hoặc AvatarUrl.
-/// </summary>
 public abstract class DoctorRequestBase : IValidatableObject
 {
     [Required(ErrorMessage = "Vui lòng nhập họ và tên bác sĩ")]
@@ -21,10 +16,6 @@ public abstract class DoctorRequestBase : IValidatableObject
     [StringLength(100, ErrorMessage = "Email không được vượt quá 100 ký tự")]
     public string? Email { get; set; }
 
-    /// <summary>
-    /// Auth (RegisterRequest) chưa có regex phone, nên dùng quy tắc ^0\d{9}$ (10 chữ số, bắt đầu bằng 0).
-    /// Đây là quy tắc ngoài Trello, cần xác nhận với nhóm.
-    /// </summary>
     [RegularExpression(@"^0\d{9}$", ErrorMessage = "Số điện thoại phải gồm 10 chữ số và bắt đầu bằng số 0")]
     public string? Phone { get; set; }
 

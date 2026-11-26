@@ -7,7 +7,6 @@ public static class DbSeeder
 {
     public static void Seed(ApplicationDbContext db)
     {
-        // 1. Bảo đảm 2 vai trò mặc định tồn tại
         var adminRole = db.Roles.FirstOrDefault(r => r.Key == "ADMIN");
         var patientRole = db.Roles.FirstOrDefault(r => r.Key == "PATIENT");
         if (adminRole == null || patientRole == null)
@@ -15,7 +14,6 @@ public static class DbSeeder
             return;
         }
 
-        // 2. Tạo tài khoản Admin mặc định nếu chưa có Admin nào
         if (!db.Users.Any(u => u.RoleId == adminRole.Id && u.IsActive))
         {
             db.Users.Add(new User
@@ -30,7 +28,6 @@ public static class DbSeeder
             db.SaveChanges();
         }
 
-        // 3. Tạo 1 tài khoản Bệnh nhân mẫu kèm hồ sơ bệnh nhân (nếu chưa có bệnh nhân nào)
         if (!db.Users.Any(u => u.RoleId == patientRole.Id))
         {
             var samplePatient = new User
@@ -61,7 +58,6 @@ public static class DbSeeder
             db.SaveChanges();
         }
 
-        // 4. Chỉ nạp Chuyên khoa, Phòng, Bác sĩ & Lịch khám khi bảng Departments đang trống
         if (db.Departments.Any())
         {
             return;
@@ -307,7 +303,6 @@ public static class DbSeeder
         db.Doctors.AddRange(doctors);
         db.SaveChanges();
 
-        // 5. Tạo lịch làm việc đầy đủ Thứ 2 -> Chủ nhật (ca sáng + ca chiều) cho tất cả bác sĩ
         var schedules = new List<DoctorSchedule>();
         foreach (var doctor in doctors)
         {

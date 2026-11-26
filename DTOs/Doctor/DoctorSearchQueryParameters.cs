@@ -2,10 +2,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace MedicalAppointment.API.DTOs.Doctor;
 
-/// <summary>
-/// Query parameters cho GET /api/doctors/search (tìm kiếm bác sĩ, phân trang).
-/// Dùng [FromQuery] trên controller.
-/// </summary>
 public class DoctorSearchQueryParameters
 {
     [StringLength(100, ErrorMessage = "Từ khóa tìm kiếm tối đa 100 ký tự")]

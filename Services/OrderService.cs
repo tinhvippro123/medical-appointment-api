@@ -39,10 +39,9 @@ public class OrderService(ApplicationDbContext dbContext) : IOrderService
 
     private async Task<OrderDetailResponse> ExecuteCheckoutAttemptAsync(int userId, CheckoutRequest request)
     {
-        // 1. Mở transaction Serializable TRƯỚC khi đọc dữ liệu
+        // Mở transaction Serializable trước khi đọc dữ liệu tránh race condition cấp STT
         await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable);
 
-        // 2. Đọc CartItems BÊN TRONG transaction (hoặc dựng từ request.Appointment khi đặt lịch trực tiếp)
         List<CartItem> cartItems;
         var isDirectAppointment = request.Appointment != null;
 
@@ -86,15 +85,14 @@ public class OrderService(ApplicationDbContext dbContext) : IOrderService
             throw new BadRequestException(ErrorCode.CART_EMPTY);
         }
 
-        // 3. Tính ngày giờ Việt Nam (UTC+7) đúng chuẩn CartService
+        // Tính ngày giờ Việt Nam (UTC+7)
         var nowVn = DateTime.UtcNow.AddHours(7);
         var todayVn = DateOnly.FromDateTime(nowVn);
         var currentTimeOfDay = nowVn.TimeOfDay;
 
-        // Lưu trữ thông tin ca làm việc của từng cartItem để kiểm tra sức chứa
+        // Lưu lại ca làm việc tương ứng của từng mục để kiểm tra sức chứa
         var scheduleMap = new Dictionary<int, DoctorSchedule>();
 
-        // 4. Kiểm tra điều kiện cơ bản của từng CartItem
         foreach (var item in cartItems)
         {
             // Bác sĩ và chuyên khoa tồn tại và còn hoạt động
@@ -153,8 +151,7 @@ public class OrderService(ApplicationDbContext dbContext) : IOrderService
             scheduleMap[item.Id] = schedule;
         }
 
-        // 5. Kiểm tra trùng lịch của hồ sơ bệnh nhân bằng khoảng giờ CHỒNG NHAU
-        // a. Trùng giữa các item trong cùng giỏ hàng
+        // Kiểm tra trùng khung giờ của cùng hồ sơ bệnh nhân trong giỏ hàng
         for (int i = 0; i < cartItems.Count; i++)
         {
             var itemA = cartItems[i];
@@ -175,7 +172,7 @@ public class OrderService(ApplicationDbContext dbContext) : IOrderService
             }
         }
 
-        // b. Trùng với các đơn khám đã có trong DB của hồ sơ bệnh nhân
+        // Kiểm tra trùng với các lịch đã đặt trong DB
         foreach (var item in cartItems)
         {
             var (slotStart, slotEnd) = ParseSlot(item.TimeSlot);
@@ -201,7 +198,7 @@ public class OrderService(ApplicationDbContext dbContext) : IOrderService
             }
         }
 
-        // 6. Kiểm tra sức chứa (MaxPatients) bằng khoảng giờ CHỒNG NHAU
+        // Kiểm tra sức chứa (MaxPatients) theo khoảng giờ chồng nhau
         for (int i = 0; i < cartItems.Count; i++)
         {
             var item = cartItems[i];
@@ -251,8 +248,7 @@ public class OrderService(ApplicationDbContext dbContext) : IOrderService
             }
         }
 
-        // 7. Cấp QueueNumber theo (DoctorId, Ngày khám)
-        // Lấy số lớn nhất của MỌI trạng thái (kể cả Cancelled) cộng 1
+        // Cấp số thứ tự theo (DoctorId, ngày khám), tính trên mọi trạng thái kể cả Cancelled
         var queueTracker = new Dictionary<(int DoctorId, DateTime Date), int>();
         var assignedQueueNumbers = new Dictionary<int, int>();
 
@@ -276,7 +272,6 @@ public class OrderService(ApplicationDbContext dbContext) : IOrderService
             assignedQueueNumbers[item.Id] = currentMaxQueue;
         }
 
-        // 8. Tạo Order, OrderDetails và xóa CartItems trong CÙNG MỘT transaction
         var totalAmount = cartItems.Sum(ci => ci.Doctor.Department.ConsultationFee);
 
         var order = new Order
@@ -315,7 +310,6 @@ public class OrderService(ApplicationDbContext dbContext) : IOrderService
         await dbContext.SaveChangesAsync();
         await transaction.CommitAsync();
 
-        // 9. Truy vấn lại để trả về OrderDetailResponse đầy đủ
         return await GetOrderByIdInternalAsync(userId, order.Id);
     }
 

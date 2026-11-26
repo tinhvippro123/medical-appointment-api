@@ -425,7 +425,7 @@ public class AuthService(
             ? null
             : verified.AvatarUrl.Trim();
 
-        // 1. Luôn ưu tiên khớp chính xác bằng ProviderUserId đã được provider xác thực
+        // Ưu tiên khớp bằng ProviderUserId đã được provider xác thực
         User? user = providerKey switch
         {
             "google" => await context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.GoogleId == socialId),
@@ -434,8 +434,7 @@ public class AuthService(
             _ => null
         };
 
-        // 2. Chỉ cho phép tự liên kết theo Email khi provider xác nhận email_verified = true (VD: Google),
-        //    KHÔNG bao giờ tự liên kết bằng Email/SĐT tự khai báo từ client và KHÔNG tự liên kết vào tài khoản ADMIN.
+        // Chỉ liên kết theo Email khi provider xác nhận email_verified = true và không tự liên kết tài khoản ADMIN
         if (user == null && normalizedEmail != null && verified.IsEmailVerified)
         {
             var existingByEmail = await context.Users.Include(u => u.Role)

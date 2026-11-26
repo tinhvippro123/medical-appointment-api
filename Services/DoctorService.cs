@@ -425,11 +425,6 @@ public class DoctorService : IDoctorService
         }
     }
 
-    /// <summary>
-    /// Kiểm tra Email trùng giữa các bác sĩ đang hoạt động.
-    /// Bỏ qua khi Email null hoặc rỗng.
-    /// So sánh không phân biệt hoa thường sau Trim.
-    /// </summary>
     private async Task ValidateEmailUniqueAsync(string? email, int? excludeDoctorId)
     {
         if (string.IsNullOrWhiteSpace(email))

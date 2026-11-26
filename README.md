@@ -1,92 +1,58 @@
-﻿# 🏥 Medical Appointment API
+# Medical Appointment API
 
-REST API Backend cho Ứng dụng Đăng Ký Khám Chữa Bệnh.
+REST API Backend cho hệ thống đặt lịch khám bệnh (ASP.NET Core 10 + Entity Framework Core + SQL Server).
 
-## 📚 Tài liệu
+## Công nghệ sử dụng
 
-| Tài liệu | Mô tả |
-|-----------|-------|
-| [Hướng dẫn Commit và PR](docs/CONTRIBUTING.md) | Quy trình commit, đặt tên branch, tạo Pull Request |
+- **Framework:** ASP.NET Core 10 Web API
+- **Cơ sở dữ liệu:** Microsoft SQL Server (EF Core Code-First + script T-SQL thuần)
+- **Xác thực:** JWT Bearer Token, BCrypt password hashing, xác thực OTP Email, đăng nhập Google / Facebook / Zalo
 
-## 🔧 Tech Stack
+## Cấu trúc thư mục
 
-- **Framework:** ASP.NET Core 10
-- **Database:** SQL Server
-- **ORM:** Entity Framework Core
-- **Authentication:** JWT Bearer Token
-- **Architecture:** Single Project (Monolith)
-
-## 📁 Cấu Trúc Project
-
-```
-MedicalAppointmentAPI.slnx
-└── src/
-    └── MedicalAppointment.API/
-        ├── Controllers/       👈 API Controllers
-        ├── Data/              👈 DbContext + Migrations
-        ├── DTOs/              👈 Request/Response models
-        ├── Entities/          👈 Database Entities (12 bảng)
-        ├── Helpers/           👈 JWT, Password Hashing
-        ├── Middlewares/       👈 Custom Middleware
-        ├── Services/          👈 Business Logic
-        ├── Program.cs         👈 Entry point
-        └── appsettings.json   👈 Cấu hình
+```text
+medical-appointment-api/
+├── Controllers/     # API Controllers (Auth, Users, Roles, Departments, Rooms, Doctors, Orders, Payments, Cart, PatientProfiles)
+├── Data/            # ApplicationDbContext và DbSeeder
+├── Database/        # MedicalAppointmentDb.sql (script tạo DB, 11 bảng & dữ liệu mẫu cho SSMS)
+├── DTOs/            # Request / Response models
+├── Entities/        # 11 Entity tương ứng 11 bảng trong SQL Server
+├── Exceptions/      # Custom exceptions & mã lỗi ErrorCode
+├── Helpers/         # Lưu ảnh trong wwwroot/images
+├── Middlewares/     # GlobalExceptionHandler
+├── Migrations/      # EF Core Migrations
+├── Provider/        # JwtProvider, PasswordHasher
+├── Services/        # Business logic services
+├── wwwroot/         # Ảnh chuyên khoa và bác sĩ
+├── Program.cs       # Cấu hình pipeline, DI, JWT, Migration & Seeder
+└── appsettings.json # Chuỗi kết nối SQL Server
 ```
 
-## 👥 Nhóm phát triển
+## Cơ sở dữ liệu
 
-| Feature | Thành viên | Phụ trách |
-|---------|-----------|-----------|
-| Auth + Setup | Tính | Đăng ký, Đăng nhập, JWT, Role, User Management |
-| Department + Room | Triệt | CRUD Chuyên khoa, Phòng khám, Upload ảnh |
-| Doctor + Schedule | Thịnh | CRUD Bác sĩ, Lịch làm việc, Tìm kiếm |
-| Booking | Thuận | Giỏ hàng, Đặt lịch, Thanh toán |
+Hệ thống gồm **11 bảng**: `Roles`, `Users`, `Departments`, `Rooms`, `Doctors`, `DoctorSchedules`, `DoctorDayOffs`, `PatientProfiles`, `CartItems`, `Orders`, `OrderDetails`.
 
-## 🚀 Chạy project
+Có thể khởi tạo theo 2 cách:
+1. Tự động qua EF Core Migration & `DbSeeder` khi chạy `dotnet run`.
+2. Mở file `Database/MedicalAppointmentDb.sql` bằng SQL Server Management Studio (SSMS) và nhấn **F5** để tạo database, ràng buộc và dữ liệu mẫu trực tiếp.
+
+## Chạy dự án
 
 ```bash
-git clone https://github.com/tinhvippro123/medical-appointment-api.git
-cd medical-appointment-api
-git checkout develop
 dotnet restore
-dotnet run --project src/MedicalAppointment.API
+dotnet run
 ```
 
-## 📋 API Endpoints
+Mặc định API chạy ở `http://localhost:5041` (Swagger UI tại `/swagger` trong môi trường Development).
+Tài khoản mẫu mặc định sau khi seed:
+- **Admin:** `0987654321` / mật khẩu `123456`
+- **Bệnh nhân:** `0912345678` / mật khẩu `123456`
 
-### Auth (/api/auth)
-- POST /api/auth/register → Đăng ký (SĐT + Mật khẩu)
-- POST /api/auth/login → Đăng nhập (SĐT + Mật khẩu, trả JWT token)
-- POST /api/auth/logout → Đăng xuất
-- PUT /api/auth/change-password → Đổi mật khẩu
+## Các nhóm API chính
 
-### Department (/api/departments)
-- GET /api/departments → Danh sách chuyên khoa
-- POST /api/departments → Thêm (Admin)
-- PUT /api/departments/{id} → Sửa (Admin)
-- DELETE /api/departments/{id} → Xóa (Admin)
+- **Auth (`/api/auth`):** `register`, `login`, `social-login`, `verify-email`, `forgot-password`, `reset-password`, `change-password`, `verify-password`, `me`, `logout`
+- **Quản lý hệ thống (`/api/users`, `/api/roles`, `/api/admin/orders`):** quản lý người dùng, vai trò, đơn đặt lịch (Admin)
+- **Danh mục & Lịch khám (`/api/departments`, `/api/rooms`, `/api/doctors`, `/api/doctors/{id}/day-offs`, `/api/doctors/{id}/schedules`):** tra cứu công khai và CRUD dành cho Admin
+- **Đặt lịch & Thanh toán (`/api/patient-profiles`, `/api/cart`, `/api/orders`, `/api/payments`):** quản lý hồ sơ bệnh nhân, giỏ hàng, đặt lịch và thanh toán VNPay / VietQR
 
-### Doctor (/api/doctors)
-- GET /api/doctors → Danh sách bác sĩ (phân trang)
-- GET /api/doctors/{id} → Chi tiết bác sĩ
-- GET /api/doctors/department/{id} → Bác sĩ theo chuyên khoa
-- GET /api/doctors/search?keyword= → Tìm kiếm
-- POST /api/doctors → Thêm (Admin)
-
-### Booking (/api/appointments)
-- GET /api/appointments/cart → Xem giỏ hàng
-- POST /api/appointments/cart → Thêm lịch hẹn vào giỏ
-- DELETE /api/appointments/cart/{id} → Xóa khỏi giỏ
-- POST /api/appointments/checkout → Xác nhận đặt lịch
-- GET /api/appointments → Lịch sử đặt lịch
-
-## 🌿 Git Workflow
-
-```
-main (production)
-  └── develop (tích hợp)
-       ├── feature/auth-login        Tính
-       ├── feature/department-crud   Triệt
-       ├── feature/doctor-list       Thịnh
-       └── feature/cart-checkout     Thuận
-```
+Tham khảo thêm: [Tài liệu Rooms API](docs/rooms-api.md)

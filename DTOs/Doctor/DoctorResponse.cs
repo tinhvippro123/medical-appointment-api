@@ -1,11 +1,5 @@
 namespace MedicalAppointment.API.DTOs.Doctor;
 
-/// <summary>
-/// Response DTO cho thông tin bác sĩ.
-/// Thiết kế mở rộng được: B3 (Doctor Detail) có thể bổ sung Schedules, DayOffs
-/// mà không đổi hợp đồng hiện tại.
-/// Room null (bác sĩ chưa gán phòng) thì RoomNumber và Floor trả null.
-/// </summary>
 public class DoctorResponse
 {
     public int Id { get; set; }
